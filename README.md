@@ -160,7 +160,42 @@ echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
 echo 'alias gitdirty="python3 ~/bin/dirty_git_finder.py"' >> ~/.bashrc
 ```
 
-### **🔧 Desktop-Integration (Optional)**
+### **🚀 Autostart Installation (Empfohlen)**
+
+Das Programm kann automatisch beim Login gestartet werden, sodass Sie immer einen Überblick über Ihre Git-Repositories haben.
+
+#### **Automatische Installation:**
+```bash
+# Ins Projektverzeichnis wechseln
+cd /home/julian/Documents/Goding\ Project\ Git/scan-for-dirty-git-repos-gui
+
+# Autostart installieren
+./install-autostart.sh
+```
+
+#### **Was macht die Installation:**
+- ✅ Erstellt Desktop Entry in `~/.config/autostart/`
+- ✅ Fügt Anwendung zum Anwendungsmenü hinzu
+- ✅ Macht alle Scripts ausführbar
+- ✅ Startet automatisch bei jedem Login
+
+#### **Autostart deaktivieren:**
+```bash
+# Autostart vollständig entfernen
+./uninstall-autostart.sh
+
+# Oder nur temporär deaktivieren
+rm ~/.config/autostart/dirty-git-finder.desktop
+```
+
+#### **Manueller Start (ohne Autostart):**
+```bash
+./launch.sh
+# oder
+python3 run.py
+```
+
+### **🔧 Desktop-Integration (Manuell)**
 
 #### **Linux - Desktop Entry erstellen:**
 ```bash
@@ -282,11 +317,16 @@ for repo in repos:
 
 ```
 finddirtygitgui/
-├── dirty_git_finder.py    # Haupt-GUI-Anwendung
-├── git_scanner.py         # Git-Repository Scanner-Modul
-├── README.md             # Diese Datei
+├── dirty_git_finder.py         # Haupt-GUI-Anwendung
+├── git_scanner.py              # Git-Repository Scanner-Modul
+├── run.py                      # Launcher-Script
+├── launch.sh                   # Shell-Launcher für Autostart
+├── dirty-git-finder.desktop    # Desktop Entry Datei
+├── install-autostart.sh        # Autostart-Installation
+├── uninstall-autostart.sh      # Autostart-Deinstallation
+├── README.md                   # Diese Datei
 └── .github/
-    └── copilot-instructions.md  # Entwicklungsrichtlinien
+    └── copilot-instructions.md # Entwicklungsrichtlinien
 ```
 
 ## Funktionsweise
@@ -374,6 +414,12 @@ repos = scanner.scan("/path", max_depth=5)
 Dieses Projekt steht unter der MIT-Lizenz. Siehe `LICENSE` für Details.
 
 ## Changelog
+
+### v1.1.0
+- Autostart-Support für Linux-Desktops
+- Automatische Installations- und Deinstallationsskripte
+- Desktop Entry Integration
+- Launch-Script für zuverlässigen Start
 
 ### v1.0.0
 - Initiale Veröffentlichung
