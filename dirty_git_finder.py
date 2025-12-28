@@ -382,9 +382,13 @@ class DirtyGitFinderGUI:
         self.context_menu = tk.Menu(self.root, tearoff=0)
         self.context_menu.add_command(label="Git Graph anzeigen", command=self.show_git_graph)
         self.context_menu.add_separator()
+        self.context_menu.add_command(label="🔄 Push & Pull ausführen", command=self.git_push_pull)
+        self.context_menu.add_separator()
         self.context_menu.add_command(label="Remote URL in Browser öffnen", command=self.open_remote_url)
         self.context_menu.add_command(label="Im Datei-Explorer öffnen", command=self.open_in_file_browser)
         self.context_menu.add_command(label="In VS Code öffnen", command=self.open_in_vscode)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="🔧 Open *this* Project", command=self.open_this_project)
         
         # Bind events to hide context menu
         self.root.bind('<Button-1>', self.hide_context_menu)  # Left click anywhere
@@ -651,7 +655,7 @@ class DirtyGitFinderGUI:
         repo_path = self.get_selected_repo_path()
         if not repo_path:
             return
-        
+
         try:
             # Try to open in VS Code
             subprocess.Popen(['code', repo_path])
@@ -661,6 +665,108 @@ class DirtyGitFinderGUI:
                 subprocess.Popen(['code-insiders', repo_path])
             except FileNotFoundError:
                 messagebox.showerror("Fehler", "VS Code ist nicht installiert oder nicht im PATH verfügbar.")
+
+    def open_this_project(self):
+        """Open this project (the GUI tool itself) in VS Code."""
+        # Get the directory where this script is located
+        this_project_path = os.path.dirname(os.path.abspath(__file__))
+
+        try:
+            # Try to open in VS Code
+            subprocess.Popen(['code', this_project_path])
+        except FileNotFoundError:
+            # VS Code not found, try with different command
+            try:
+                subprocess.Popen(['code-insiders', this_project_path])
+            except FileNotFoundError:
+                # Fall back to file browser
+                self.open_folder_in_file_manager(this_project_path)
+
+    def git_push_pull(self):
+        """Execute git pull and push for the selected repository."""
+        repo_path = self.get_selected_repo_path()
+        if not repo_path:
+            return
+
+        try:
+            # Create a new window to show the output
+            output_window = tk.Toplevel(self.root)
+            output_window.title(f"Git Push & Pull - {os.path.basename(repo_path)}")
+            output_window.geometry("700x500")
+
+            # Create text widget with scrollbars
+            frame = ttk.Frame(output_window)
+            frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            # Text widget for output
+            text_widget = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 10))
+            text_widget.pack(fill=tk.BOTH, expand=True)
+
+            def run_git_commands():
+                """Run git pull and push in a separate thread."""
+                try:
+                    # Git Pull
+                    text_widget.insert(tk.END, "=== Git Pull ===\n")
+                    text_widget.update_idletasks()
+
+                    pull_result = subprocess.run(
+                        ['git', 'pull'],
+                        cwd=repo_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+
+                    text_widget.insert(tk.END, pull_result.stdout)
+                    if pull_result.stderr:
+                        text_widget.insert(tk.END, pull_result.stderr)
+                    text_widget.insert(tk.END, f"\nExit Code: {pull_result.returncode}\n\n")
+                    text_widget.update_idletasks()
+
+                    # Git Push
+                    text_widget.insert(tk.END, "=== Git Push ===\n")
+                    text_widget.update_idletasks()
+
+                    push_result = subprocess.run(
+                        ['git', 'push'],
+                        cwd=repo_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+
+                    text_widget.insert(tk.END, push_result.stdout)
+                    if push_result.stderr:
+                        text_widget.insert(tk.END, push_result.stderr)
+                    text_widget.insert(tk.END, f"\nExit Code: {push_result.returncode}\n\n")
+
+                    # Summary
+                    if pull_result.returncode == 0 and push_result.returncode == 0:
+                        text_widget.insert(tk.END, "✅ Push & Pull erfolgreich abgeschlossen!\n")
+                    else:
+                        text_widget.insert(tk.END, "⚠️ Es gab Fehler oder Warnungen.\n")
+
+                    text_widget.update_idletasks()
+
+                except subprocess.TimeoutExpired:
+                    text_widget.insert(tk.END, "\n❌ Timeout: Git-Befehl dauerte zu lange.\n")
+                except Exception as e:
+                    text_widget.insert(tk.END, f"\n❌ Fehler: {str(e)}\n")
+
+                # Make text read-only
+                text_widget.config(state=tk.DISABLED)
+
+            # Run in separate thread to avoid blocking UI
+            import threading
+            git_thread = threading.Thread(target=run_git_commands, daemon=True)
+            git_thread.start()
+
+            # Add close button
+            close_button = ttk.Button(output_window, text="Schließen", command=output_window.destroy)
+            close_button.pack(pady=(5, 10))
+
+        except Exception as e:
+            messagebox.showerror("Fehler", f"Konnte Push & Pull nicht ausführen: {e}")
     
     def auto_start_scan(self):
         """Automatically start scanning the home directory."""
