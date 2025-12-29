@@ -373,8 +373,8 @@ class DirtyGitFinderGUI:
         v_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
         h_scrollbar.grid(row=1, column=0, sticky=(tk.W, tk.E))
         
-        # Configure tags for branch highlighting
-        self.tree.tag_configure('non_main_branch', foreground='red', font=('TkDefaultFont', 10, 'bold'))
+        # Configure tags for branch highlighting (entire row)
+        self.tree.tag_configure('non_main_branch', foreground='red', background='#ffe6e6', font=('TkDefaultFont', 10, 'bold'))
 
         # Bind events
         self.tree.bind('<Double-1>', self.on_double_click)
