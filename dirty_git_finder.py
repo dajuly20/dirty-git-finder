@@ -373,6 +373,9 @@ class DirtyGitFinderGUI:
         v_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
         h_scrollbar.grid(row=1, column=0, sticky=(tk.W, tk.E))
         
+        # Configure tags for branch highlighting
+        self.tree.tag_configure('non_main_branch', foreground='red', font=('TkDefaultFont', 10, 'bold'))
+
         # Bind events
         self.tree.bind('<Double-1>', self.on_double_click)
         self.tree.bind('<Button-3>', self.on_right_click)  # Right click
@@ -387,6 +390,7 @@ class DirtyGitFinderGUI:
         self.context_menu.add_command(label="Remote URL in Browser öffnen", command=self.open_remote_url)
         self.context_menu.add_command(label="Im Datei-Explorer öffnen", command=self.open_in_file_browser)
         self.context_menu.add_command(label="In VS Code öffnen", command=self.open_in_vscode)
+        self.context_menu.add_command(label="Terminal öffnen", command=self.open_terminal)
         self.context_menu.add_separator()
         self.context_menu.add_command(label="🔧 Open *this* Project", command=self.open_this_project)
         
@@ -512,10 +516,16 @@ class DirtyGitFinderGUI:
         
         # Calculate time difference
         time_diff = self.scanner.calculate_time_diff(oldest_mod_info, last_commit_info)
-        
+
         # Insert dirty repos at the beginning, clean repos at the end
         position = 0 if repo_info['dirty'] else 'end'
-        
+
+        # Determine tags for branch highlighting
+        branch = repo_info['branch']
+        tags = ()
+        if branch not in ('main', 'master'):
+            tags = ('non_main_branch',)
+
         item = self.tree.insert('', position, values=(
             repo_info['name'],
             repo_info['path'],
@@ -525,8 +535,8 @@ class DirtyGitFinderGUI:
             oldest_mod_display,
             last_commit_display,
             time_diff
-        ))
-        
+        ), tags=tags)
+
         # Color code dirty repositories
         if repo_info['dirty']:
             self.tree.set(item, 'Status', status)
@@ -665,6 +675,49 @@ class DirtyGitFinderGUI:
                 subprocess.Popen(['code-insiders', repo_path])
             except FileNotFoundError:
                 messagebox.showerror("Fehler", "VS Code ist nicht installiert oder nicht im PATH verfügbar.")
+
+    def open_terminal(self):
+        """Open a terminal in the selected repository directory."""
+        repo_path = self.get_selected_repo_path()
+        if not repo_path:
+            return
+
+        try:
+            import platform
+            system = platform.system()
+
+            if system == "Linux":
+                # Try common Linux terminals
+                terminals = [
+                    ['gnome-terminal', '--working-directory=' + repo_path],
+                    ['konsole', '--workdir', repo_path],
+                    ['xfce4-terminal', '--working-directory=' + repo_path],
+                    ['xterm', '-e', f'cd "{repo_path}" && bash'],
+                ]
+
+                terminal_opened = False
+                for terminal_cmd in terminals:
+                    try:
+                        subprocess.Popen(terminal_cmd)
+                        terminal_opened = True
+                        break
+                    except FileNotFoundError:
+                        continue
+
+                if not terminal_opened:
+                    messagebox.showerror("Fehler", "Kein Terminal-Emulator gefunden.")
+
+            elif system == "Darwin":  # macOS
+                # Use Terminal.app on macOS
+                script = f'tell application "Terminal" to do script "cd \\"{repo_path}\\""'
+                subprocess.Popen(['osascript', '-e', script])
+
+            elif system == "Windows":
+                # Use cmd on Windows
+                subprocess.Popen(['cmd', '/K', 'cd', '/D', repo_path])
+
+        except Exception as e:
+            messagebox.showerror("Fehler", f"Terminal konnte nicht geöffnet werden: {e}")
 
     def open_this_project(self):
         """Open this project (the GUI tool itself) in VS Code."""
@@ -1258,7 +1311,13 @@ X-GNOME-Autostart-enabled=true
         
         # Calculate time difference
         time_diff = self.scanner.calculate_time_diff(oldest_mod_info, last_commit_info)
-        
+
+        # Determine tags for branch highlighting
+        branch = repo_info['branch']
+        tags = ()
+        if branch not in ('main', 'master'):
+            tags = ('non_main_branch',)
+
         item = self.tree.insert('', 'end', values=(
             repo_info['name'],
             repo_info['path'],
@@ -1268,8 +1327,8 @@ X-GNOME-Autostart-enabled=true
             oldest_mod_display,
             last_commit_display,
             time_diff
-        ))
-        
+        ), tags=tags)
+
         # Color code dirty repositories
         if repo_info['dirty']:
             self.tree.set(item, 'Status', status)
