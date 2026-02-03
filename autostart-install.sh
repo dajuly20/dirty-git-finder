@@ -13,12 +13,33 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AUTOSTART_DIR="$HOME/.config/autostart"
 mkdir -p "$AUTOSTART_DIR"
 
+# Create ~/.local/bin if it doesn't exist
+BIN_DIR="$HOME/.local/bin"
+mkdir -p "$BIN_DIR"
+
 # Make the launcher script executable
 chmod +x "$SCRIPT_DIR/launch.sh"
 chmod +x "$SCRIPT_DIR/run.py"
 chmod +x "$SCRIPT_DIR/dirty_git_finder.py"
 
 echo "Made scripts executable"
+
+# Create symlink in ~/.local/bin
+SYMLINK_NAME="dirty-git-finder"
+if [ -L "$BIN_DIR/$SYMLINK_NAME" ] || [ -e "$BIN_DIR/$SYMLINK_NAME" ]; then
+    rm "$BIN_DIR/$SYMLINK_NAME"
+fi
+ln -s "$SCRIPT_DIR/launch.sh" "$BIN_DIR/$SYMLINK_NAME"
+echo "Created symlink: $BIN_DIR/$SYMLINK_NAME -> $SCRIPT_DIR/launch.sh"
+
+# Check if ~/.local/bin is in PATH
+if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+    echo ""
+    echo "⚠️  HINWEIS: $BIN_DIR ist nicht in deinem PATH!"
+    echo "   Füge folgende Zeile zu ~/.bashrc oder ~/.zshrc hinzu:"
+    echo "   export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo ""
+fi
 
 # Copy the desktop file to autostart directory
 cp "$SCRIPT_DIR/dirty-git-finder.desktop" "$AUTOSTART_DIR/"
@@ -41,13 +62,8 @@ echo "Installation complete!"
 echo ""
 echo "The Dirty Git Finder will now start automatically when you log in."
 echo ""
-echo "To manage autostart:"
-echo "  - Enable:  cp '$SCRIPT_DIR/dirty-git-finder.desktop' '$AUTOSTART_DIR/'"
-echo "  - Disable: rm '$AUTOSTART_DIR/dirty-git-finder.desktop'"
+echo "To start manually, run:"
+echo "  dirty-git-finder"
 echo ""
-echo "To start manually right now:"
-echo "  $SCRIPT_DIR/launch.sh"
-echo ""
-echo "To uninstall:"
-echo "  rm '$AUTOSTART_DIR/dirty-git-finder.desktop'"
-echo "  rm '$APPS_DIR/dirty-git-finder.desktop'"
+echo "To uninstall, run:"
+echo "  $SCRIPT_DIR/uninstall-autostart.sh"

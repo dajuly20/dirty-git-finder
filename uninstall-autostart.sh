@@ -22,6 +22,15 @@ else
     echo "Application menu entry not found (already removed)"
 fi
 
+# Remove symlink from ~/.local/bin
+SYMLINK="$HOME/.local/bin/dirty-git-finder"
+if [ -L "$SYMLINK" ] || [ -e "$SYMLINK" ]; then
+    rm "$SYMLINK"
+    echo "Removed symlink: $SYMLINK"
+else
+    echo "Symlink not found (already removed)"
+fi
+
 echo ""
 echo "Uninstallation complete!"
 echo "The Dirty Git Finder will no longer start automatically."
