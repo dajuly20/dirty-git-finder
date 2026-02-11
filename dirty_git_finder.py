@@ -279,16 +279,59 @@ class DirtyGitFinderGUI:
         self.root = root
         self.root.title("Dirty Git Repository Finder")
         self.root.geometry("1000x700")
-        
+
+        # Set application icon
+        self.set_app_icon()
+
         self.scanner = GitRepoScanner()
         self.scan_thread = None
         self.found_repos = []
-        
+
         self.setup_ui()
         
         # Automatisch Home-Verzeichnis scannen nach UI-Setup
         self.root.after(100, self.auto_start_scan)
-        
+
+    def set_app_icon(self):
+        """Set the application icon."""
+        try:
+            from PIL import Image, ImageTk
+            # Get the directory where this script is located
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            icon_path = os.path.join(script_dir, 'app_icon.png')
+
+            if os.path.exists(icon_path):
+                # Load the icon image
+                icon_image = Image.open(icon_path)
+                # Convert to PhotoImage
+                photo = ImageTk.PhotoImage(icon_image)
+                # Set as window icon
+                self.root.iconphoto(True, photo)
+                # Keep a reference to prevent garbage collection
+                self.root._icon_photo = photo
+            else:
+                # Fallback: generate icon if it doesn't exist
+                self._generate_icon_if_missing()
+        except ImportError:
+            # PIL not available, skip icon setting
+            pass
+        except Exception as e:
+            # Silently fail if icon can't be set
+            pass
+
+    def _generate_icon_if_missing(self):
+        """Generate the icon if it's missing."""
+        try:
+            import subprocess
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            create_icon_script = os.path.join(script_dir, 'create_icon.py')
+            if os.path.exists(create_icon_script):
+                subprocess.run(['python3', create_icon_script], check=True)
+                # Try setting icon again
+                self.set_app_icon()
+        except Exception:
+            pass
+
     def setup_ui(self):
         """Set up the user interface."""
         # Main frame
