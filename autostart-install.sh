@@ -41,15 +41,32 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     echo ""
 fi
 
-# Copy the desktop file to autostart directory
-cp "$SCRIPT_DIR/dirty-git-finder.desktop" "$AUTOSTART_DIR/"
+# Generate desktop file with correct paths (don't use static file with hardcoded paths)
+DESKTOP_FILE="$AUTOSTART_DIR/dirty-git-finder.desktop"
+cat > "$DESKTOP_FILE" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Dirty Git Finder
+GenericName=Git Repository Monitor
+Comment=Scans for Git repositories and shows which ones have uncommitted changes
+Exec=$BIN_DIR/$SYMLINK_NAME
+Path=$SCRIPT_DIR
+Icon=git
+Terminal=false
+Categories=Development;Utility;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+EOF
 
-echo "Installed autostart entry to: $AUTOSTART_DIR/dirty-git-finder.desktop"
+chmod +x "$DESKTOP_FILE"
+echo "Installed autostart entry to: $DESKTOP_FILE"
 
 # Also copy to applications directory for the application menu (optional)
 APPS_DIR="$HOME/.local/share/applications"
 mkdir -p "$APPS_DIR"
-cp "$SCRIPT_DIR/dirty-git-finder.desktop" "$APPS_DIR/"
+cp "$DESKTOP_FILE" "$APPS_DIR/"
+chmod +x "$APPS_DIR/dirty-git-finder.desktop"
 
 echo "Installed application menu entry to: $APPS_DIR/dirty-git-finder.desktop"
 

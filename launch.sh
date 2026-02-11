@@ -2,8 +2,8 @@
 # Launcher script for Dirty Git Finder GUI
 # This script ensures the application runs from the correct directory
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the directory where the actual script is located (follow symlinks)
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 
 # Change to the script directory
 cd "$SCRIPT_DIR"

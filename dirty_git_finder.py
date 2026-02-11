@@ -325,7 +325,10 @@ class DirtyGitFinderGUI:
         self.cancel_button.pack(side=tk.LEFT, padx=(0, 5))
         
         self.clear_button = ttk.Button(button_frame, text="Clear Results", command=self.clear_results)
-        self.clear_button.pack(side=tk.LEFT)
+        self.clear_button.pack(side=tk.LEFT, padx=(0, 5))
+
+        self.feature_bug_button = ttk.Button(button_frame, text="Feature/Bug", command=self.report_feature_bug)
+        self.feature_bug_button.pack(side=tk.LEFT)
         
         # Progress bar
         self.progress_var = tk.StringVar(value="Ready to scan")
@@ -349,7 +352,7 @@ class DirtyGitFinderGUI:
         self.tree.heading('Path', text='Path', command=lambda: self.sort_treeview('Path', 'alpha'))
         self.tree.heading('Branch', text='Branch', command=lambda: self.sort_treeview('Branch', 'alpha'))
         self.tree.heading('Status', text='Status', command=lambda: self.sort_treeview('Status', 'alpha'))
-        self.tree.heading('Changes', text='Changes', command=lambda: self.sort_treeview('Changes', 'numeric'))
+        self.tree.heading('Changes', text='Changes', command=lambda: self.sort_treeview('Changes', 'alpha'))
         self.tree.heading('Last Modified', text='Älteste Änderung', command=lambda: self.sort_treeview('Last Modified', 'date'))
         self.tree.heading('Last Commit', text='Letzter Commit', command=lambda: self.sort_treeview('Last Commit', 'date'))
         self.tree.heading('Time Diff', text='Zeitdifferenz', command=lambda: self.sort_treeview('Time Diff', 'timediff'))
@@ -358,7 +361,7 @@ class DirtyGitFinderGUI:
         self.tree.column('Path', width=170)
         self.tree.column('Branch', width=80)
         self.tree.column('Status', width=90)
-        self.tree.column('Changes', width=60)
+        self.tree.column('Changes', width=200)
         self.tree.column('Last Modified', width=160)
         self.tree.column('Last Commit', width=140)
         self.tree.column('Time Diff', width=90)
@@ -381,18 +384,35 @@ class DirtyGitFinderGUI:
         self.tree.bind('<Button-3>', self.on_right_click)  # Right click
         self.tree.bind('<Button-1>', self.on_single_click)  # Single click for git graph
         
+        # Create menu bar
+        self.menubar = tk.Menu(self.root)
+        self.root.config(menu=self.menubar)
+
+        # File menu
+        file_menu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Datei", menu=file_menu)
+        file_menu.add_command(label="🔍 Scan starten", command=self.start_scan)
+        file_menu.add_command(label="⏹️ Scan abbrechen", command=self.cancel_scan)
+        file_menu.add_separator()
+        file_menu.add_command(label="🗑️ Ergebnisse löschen", command=self.clear_results)
+        file_menu.add_separator()
+        file_menu.add_command(label="📝 Feature/Bug melden", command=self.report_feature_bug)
+        file_menu.add_separator()
+        file_menu.add_command(label="❌ Beenden", command=self.root.quit)
+
         # Create context menu
         self.context_menu = tk.Menu(self.root, tearoff=0)
-        self.context_menu.add_command(label="Git Graph anzeigen", command=self.show_git_graph)
+        self.context_menu.add_command(label="📊 Git Graph anzeigen", command=self.show_git_graph)
         self.context_menu.add_separator()
         self.context_menu.add_command(label="🔄 Push & Pull ausführen", command=self.git_push_pull)
         self.context_menu.add_separator()
-        self.context_menu.add_command(label="Remote URL in Browser öffnen", command=self.open_remote_url)
-        self.context_menu.add_command(label="Im Datei-Explorer öffnen", command=self.open_in_file_browser)
-        self.context_menu.add_command(label="In VS Code öffnen", command=self.open_in_vscode)
-        self.context_menu.add_command(label="Terminal öffnen", command=self.open_terminal)
+        self.context_menu.add_command(label="🌐 Remote URL in Browser öffnen", command=self.open_remote_url)
+        self.context_menu.add_command(label="📁 Im Datei-Explorer öffnen", command=self.open_in_file_browser)
+        self.context_menu.add_command(label="💻 In VS Code öffnen", command=self.open_in_vscode)
+        self.context_menu.add_command(label="🖥️ Terminal öffnen", command=self.open_terminal)
         self.context_menu.add_separator()
         self.context_menu.add_command(label="🔧 Open *this* Project", command=self.open_this_project)
+        self.context_menu.add_command(label="📝 Feature/Bug melden", command=self.report_feature_bug)
         
         # Bind events to hide context menu
         self.root.bind('<Button-1>', self.hide_context_menu)  # Left click anywhere
@@ -501,19 +521,23 @@ class DirtyGitFinderGUI:
         status_color = "red" if repo_info['dirty'] else "green"
         oldest_mod_info = repo_info.get('oldest_modification', '')
         last_commit_info = repo_info.get('last_commit', '')
-        
+
         # Handle both string and dict format for oldest_modification
         if isinstance(oldest_mod_info, dict):
             oldest_mod_display = oldest_mod_info.get('display', '')
         else:
             oldest_mod_display = oldest_mod_info or ''
-        
+
         # Handle last commit display
         if isinstance(last_commit_info, dict):
             last_commit_display = last_commit_info.get('display', '')
         else:
             last_commit_display = last_commit_info or ''
-        
+
+        # Format changes as git status -s output
+        changes_list = repo_info.get('changes', [])
+        changes_display = ', '.join(changes_list[:5]) if changes_list else ''
+
         # Calculate time difference
         time_diff = self.scanner.calculate_time_diff(oldest_mod_info, last_commit_info)
 
@@ -531,7 +555,7 @@ class DirtyGitFinderGUI:
             repo_info['path'],
             repo_info['branch'],
             status,
-            repo_info['changes_count'],
+            changes_display,
             oldest_mod_display,
             last_commit_display,
             time_diff
@@ -734,6 +758,54 @@ class DirtyGitFinderGUI:
             except FileNotFoundError:
                 # Fall back to file browser
                 self.open_folder_in_file_manager(this_project_path)
+
+    def report_feature_bug(self):
+        """Open a dialog to report a feature request or bug."""
+        # Create dialog window
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Feature/Bug melden")
+        dialog.geometry("500x150")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        # Center dialog
+        dialog.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() // 2) - (dialog.winfo_width() // 2)
+        y = self.root.winfo_y() + (self.root.winfo_height() // 2) - (dialog.winfo_height() // 2)
+        dialog.geometry(f"+{x}+{y}")
+
+        # Label
+        ttk.Label(dialog, text="Feature-Wunsch oder Bug beschreiben:").pack(pady=(15, 5), padx=15, anchor=tk.W)
+
+        # Entry field
+        entry_var = tk.StringVar()
+        entry = ttk.Entry(dialog, textvariable=entry_var, width=60)
+        entry.pack(pady=5, padx=15, fill=tk.X)
+        entry.focus_set()
+
+        def submit():
+            text = entry_var.get().strip()
+            if text:
+                # Get path to feature_bugs.txt in project directory
+                project_dir = os.path.dirname(os.path.abspath(__file__))
+                bugs_file = os.path.join(project_dir, "feature_bugs.txt")
+
+                # Append to file
+                with open(bugs_file, 'a') as f:
+                    f.write(text + '\n')
+
+                dialog.destroy()
+                self.status_var.set(f"Feature/Bug gespeichert: {text[:50]}...")
+
+        # Bind Enter key
+        entry.bind('<Return>', lambda e: submit())
+
+        # Buttons
+        button_frame = ttk.Frame(dialog)
+        button_frame.pack(pady=15)
+
+        ttk.Button(button_frame, text="Speichern", command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Abbrechen", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def git_push_pull(self):
         """Execute git pull and push for the selected repository."""
@@ -1296,19 +1368,23 @@ X-GNOME-Autostart-enabled=true
         status = "🔥 DIRTY" if repo_info['dirty'] else "✅ CLEAN"
         oldest_mod_info = repo_info.get('oldest_modification', '')
         last_commit_info = repo_info.get('last_commit', '')
-        
+
         # Handle both string and dict format for oldest_modification
         if isinstance(oldest_mod_info, dict):
             oldest_mod_display = oldest_mod_info.get('display', '')
         else:
             oldest_mod_display = oldest_mod_info or ''
-        
+
         # Handle last commit display
         if isinstance(last_commit_info, dict):
             last_commit_display = last_commit_info.get('display', '')
         else:
             last_commit_display = last_commit_info or ''
-        
+
+        # Format changes as git status -s output
+        changes_list = repo_info.get('changes', [])
+        changes_display = ', '.join(changes_list[:5]) if changes_list else ''
+
         # Calculate time difference
         time_diff = self.scanner.calculate_time_diff(oldest_mod_info, last_commit_info)
 
@@ -1323,7 +1399,7 @@ X-GNOME-Autostart-enabled=true
             repo_info['path'],
             repo_info['branch'],
             status,
-            repo_info['changes_count'],
+            changes_display,
             oldest_mod_display,
             last_commit_display,
             time_diff

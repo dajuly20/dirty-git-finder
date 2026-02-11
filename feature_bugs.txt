@@ -1,0 +1,5 @@
+switch branch
+wie in bash   > 3? 1!  ...
+icons hinzugügen
+Autostart Checkbox in Datei => Autostart
+rescale
