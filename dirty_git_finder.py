@@ -398,6 +398,8 @@ class DirtyGitFinderGUI:
         file_menu.add_separator()
         file_menu.add_command(label="📝 Feature/Bug melden", command=self.report_feature_bug)
         file_menu.add_separator()
+        file_menu.add_command(label="🔧 Open *this* Project", command=self.open_this_project)
+        file_menu.add_separator()
         file_menu.add_command(label="❌ Beenden", command=self.root.quit)
 
         # Create context menu
@@ -410,9 +412,6 @@ class DirtyGitFinderGUI:
         self.context_menu.add_command(label="📁 Im Datei-Explorer öffnen", command=self.open_in_file_browser)
         self.context_menu.add_command(label="💻 In VS Code öffnen", command=self.open_in_vscode)
         self.context_menu.add_command(label="🖥️ Terminal öffnen", command=self.open_terminal)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label="🔧 Open *this* Project", command=self.open_this_project)
-        self.context_menu.add_command(label="📝 Feature/Bug melden", command=self.report_feature_bug)
         
         # Bind events to hide context menu
         self.root.bind('<Button-1>', self.hide_context_menu)  # Left click anywhere
