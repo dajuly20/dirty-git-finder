@@ -7,8 +7,9 @@ This provides an easy way to start the application.
 import sys
 import os
 
-# Add the current directory to the Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add the src directory to the Python path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(script_dir, 'src'))
 
 try:
     from dirty_git_finder import main

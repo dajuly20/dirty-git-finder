@@ -76,15 +76,18 @@ def create_icon():
     except Exception as e:
         print(f"Font error: {e}")
 
-    # Save as PNG
-    icon_path = os.path.join(os.path.dirname(__file__), 'app_icon.png')
+    # Save as PNG in assets directory
+    assets_dir = os.path.join(os.path.dirname(__file__), 'assets')
+    os.makedirs(assets_dir, exist_ok=True)
+
+    icon_path = os.path.join(assets_dir, 'app_icon.png')
     img.save(icon_path, 'PNG')
     print(f"Icon created: {icon_path}")
 
     # Also create smaller versions
     for size_small in [128, 64, 32, 16]:
         img_small = img.resize((size_small, size_small), Image.Resampling.LANCZOS)
-        icon_small_path = os.path.join(os.path.dirname(__file__), f'app_icon_{size_small}.png')
+        icon_small_path = os.path.join(assets_dir, f'app_icon_{size_small}.png')
         img_small.save(icon_small_path, 'PNG')
 
     return icon_path
