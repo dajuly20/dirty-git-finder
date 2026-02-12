@@ -32,7 +32,9 @@ Eine professionelle Python GUI-Anwendung, die Ihr System nach Git-Repositories d
 
 ### 🎯 **Erweiterte Git-Status-Analyse**
 - **Detaillierte Dirty-Detection**: Erkennt modified, added, deleted, untracked files
-- **Remote-Check**: Repositories ohne Remote (GitHub/GitLab) werden als DIRTY markiert
+- **Einstellbare Dirty-Kriterien**: Checkboxen für Uncommitted changes, No remote, Unpushed commits
+- **Remote-Check**: Repositories ohne Remote (GitHub/GitLab) können als DIRTY markiert werden
+- **Unpushed-Commits-Detection**: Erkennt Commits die noch nicht gepusht wurden
 - **Commit-Timeline**: Zeigt letzten Commit-Zeitpunkt und Alter der Änderungen
 - **Branch-Tracking**: Aktueller Branch und HEAD-Status
 - **Zeitdifferenz-Analyse**: Wie lange sind Änderungen bereits uncommitted?
@@ -378,9 +380,12 @@ rm ~/.config/autostart/dirty-git-finder.desktop
 │ - Changes parsen (M, A, D, ??, etc.)        │
 │ - Anzahl der Änderungen zählen              │
 │ - Remote-Check (git remote)                 │
-│ - Dirty bestimmen:                          │
-│   * Uncommitted changes ODER                │
-│   * Kein Remote konfiguriert                │
+│ - Unpushed-Check (git rev-list @{u}..HEAD) │
+│ - Dirty-Kriterien sammeln:                  │
+│   * has_uncommitted (Changes vorhanden)     │
+│   * has_remote (Remote konfiguriert)        │
+│   * has_unpushed (Commits nicht gepusht)    │
+│ - GUI entscheidet basierend auf Checkboxen │
 └─────────────────────────────────────────────┘
             ↓
 ┌─────────────────────────────────────────────┐
@@ -421,8 +426,9 @@ C  = Copied (Datei kopiert)
 │   'path': '/home/user/project',             │
 │   'name': 'project',                        │
 │   'branch': 'main',                         │
-│   'dirty': True/False,                      │
+│   'has_uncommitted': True/False,            │
 │   'has_remote': True/False,                 │
+│   'has_unpushed': True/False,               │
 │   'changes_count': 3,                       │
 │   'changes': ['M file.py', '?? new.txt'],   │
 │   'oldest_modification': {                  │
@@ -939,20 +945,35 @@ scan-for-dirty-git-repos-gui/
 - **Clear Results**: Löscht Ergebnisliste
 - **Feature/Bug**: Feedback-Dialog öffnen
 
+#### **Filter & Optionen**
+- **Show**: Radio-Buttons (All / Dirty Only / Clean Only)
+- **Mark as dirty**: Checkboxen zur Auswahl der Dirty-Kriterien
+  - ☑ Uncommitted changes
+  - ☑ No remote
+  - ☐ Unpushed commits
+- **Beim Systemstart ausführen**: Autostart-Checkbox
+
 #### **Ergebnistabelle (8 Spalten)**
 1. **Repository Name**: Projektname (Verzeichnisname)
 2. **Path**: Vollständiger Pfad
 3. **Branch**: Aktueller Git-Branch
 4. **Status**: 🔥 DIRTY oder ✅ CLEAN
-5. **Changes**: Git-Status-Zeilen (M, A, D, ??) + ⚠️ NO REMOTE wenn kein Remote konfiguriert
+5. **Changes**: Git-Status-Zeilen (M, A, D, ??) + Warnungen (⚠️ NO REMOTE, ⚠️ UNPUSHED)
 6. **Älteste Änderung**: Dateiname + Zeitstempel
 7. **Letzter Commit**: Wann war der letzte Commit
 8. **Zeitdifferenz**: Alter der uncommitted changes
 
 #### **Filter-Optionen**
 - **All**: Zeigt alle gefundenen Repositories
-- **Dirty Only**: Nur Repositories mit uncommitted changes ODER ohne Remote (Standard)
-- **Clean Only**: Nur saubere Repositories mit Remote
+- **Dirty Only**: Nur Repositories die den aktivierten Dirty-Kriterien entsprechen (Standard)
+- **Clean Only**: Nur saubere Repositories
+
+#### **Dirty-Kriterien (Einstellbar via Checkboxen)**
+- **☑ Uncommitted changes** (Standard: AN): Modified, added, deleted, untracked files
+- **☑ No remote** (Standard: AN): Repository hat kein Remote (GitHub/GitLab) konfiguriert
+- **☐ Unpushed commits** (Standard: AUS): Commits die noch nicht auf Remote gepusht wurden
+
+Ein Repository wird als DIRTY markiert, wenn **mindestens eines** der aktivierten Kriterien zutrifft.
 
 ### **Maus-Interaktionen**
 
@@ -1209,10 +1230,20 @@ Dieses Projekt steht unter der MIT-Lizenz.
 
 ## 📝 Changelog
 
+### v2.1.0 (2026-02-12)
+- **Einstellbare Dirty-Kriterien**: Checkboxen zur Auswahl was als "dirty" gilt
+- **Uncommitted changes**: Standard-Kriterium (an)
+- **No remote**: Repository ohne Remote-Backup (an)
+- **Unpushed commits**: Commits die nicht gepusht wurden (aus, aktivierbar)
+- **Dynamische Aktualisierung**: Sofortige Neuberechnung bei Checkbox-Änderung
+- **Erweiterte Anzeige**: ⚠️ UNPUSHED zusätzlich zu ⚠️ NO REMOTE
+
 ### v2.0.0 (2026-02-12)
 - Detaillierte README mit Programmablauf
 - Architektur-Dokumentation
 - Datenfluss-Diagramme
+- Projektstruktur reorganisiert (src/, scripts/, assets/, docs/, config/)
+- Remote-Check: Repos ohne Remote werden als dirty markiert
 
 ### v1.1.0
 - Autostart-Support für Linux-Desktops
