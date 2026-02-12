@@ -57,6 +57,39 @@ class GitRepoScanner:
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
             return False
 
+    def has_unpushed_commits(self, repo_path):
+        """Check if a Git repository has unpushed commits."""
+        try:
+            # First check if there's a remote tracking branch
+            result = subprocess.run(
+                ['git', 'rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+
+            # If no upstream branch, consider it as "no unpushed commits"
+            if result.returncode != 0:
+                return False
+
+            # Check if there are commits ahead of remote
+            ahead_result = subprocess.run(
+                ['git', 'rev-list', '--count', '@{u}..HEAD'],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+
+            if ahead_result.returncode == 0:
+                ahead_count = int(ahead_result.stdout.strip())
+                return ahead_count > 0
+
+            return False
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError, ValueError):
+            return False
+
     def get_repo_status(self, repo_path):
         """Get detailed status information for a Git repository."""
         try:
@@ -81,8 +114,10 @@ class GitRepoScanner:
 
             status_lines = status_result.stdout.strip().split('\n') if status_result.stdout.strip() else []
 
-            # Check if repository has a remote
+            # Check various dirty criteria
+            has_uncommitted = bool(status_lines)
             has_remote = self.has_remote(repo_path)
+            has_unpushed = self.has_unpushed_commits(repo_path)
 
             # Get oldest modification time of dirty files
             oldest_mod_time = self.get_oldest_dirty_file_time(repo_path, status_lines)
@@ -90,22 +125,20 @@ class GitRepoScanner:
             # Get last commit info
             last_commit_info = self.get_last_commit_info(repo_path)
 
-            # Repository is dirty if:
-            # 1. It has uncommitted changes (status_lines not empty)
-            # 2. It has no remote configured
-            is_dirty = bool(status_lines) or not has_remote
-
+            # NOTE: The dirty status will be determined by the GUI based on user preferences
+            # We provide all the information needed for the decision
             return {
                 'branch': branch,
-                'dirty': is_dirty,
+                'has_uncommitted': has_uncommitted,
                 'has_remote': has_remote,
+                'has_unpushed': has_unpushed,
                 'changes_count': len(status_lines),
                 'changes': status_lines[:5],  # Show first 5 changes
                 'oldest_modification': oldest_mod_time,
                 'last_commit': last_commit_info
             }
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
-            return {'branch': 'unknown', 'dirty': False, 'has_remote': False, 'changes_count': 0, 'changes': [], 'oldest_modification': None, 'last_commit': None}
+            return {'branch': 'unknown', 'has_uncommitted': False, 'has_remote': False, 'has_unpushed': False, 'changes_count': 0, 'changes': [], 'oldest_modification': None, 'last_commit': None}
     
     def get_oldest_dirty_file_time(self, repo_path, status_lines):
         """Get the oldest modification time of dirty files with filename."""
@@ -512,7 +545,31 @@ class DirtyGitFinderGUI:
         ttk.Radiobutton(filter_left, text="All", variable=self.filter_var, value="all", command=self.apply_filter).pack(side=tk.LEFT, padx=(5, 0))
         ttk.Radiobutton(filter_left, text="Dirty Only", variable=self.filter_var, value="dirty", command=self.apply_filter).pack(side=tk.LEFT, padx=(5, 0))
         ttk.Radiobutton(filter_left, text="Clean Only", variable=self.filter_var, value="clean", command=self.apply_filter).pack(side=tk.LEFT, padx=(5, 0))
-        
+
+        # Separator
+        ttk.Separator(filter_frame, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=(10, 10))
+
+        # Dirty criteria options
+        criteria_frame = ttk.Frame(filter_frame)
+        criteria_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        ttk.Label(criteria_frame, text="Mark as dirty:").pack(side=tk.LEFT)
+
+        # Checkbox variables for dirty criteria
+        self.dirty_uncommitted_var = tk.BooleanVar(value=True)
+        self.dirty_no_remote_var = tk.BooleanVar(value=True)
+        self.dirty_unpushed_var = tk.BooleanVar(value=False)
+
+        ttk.Checkbutton(criteria_frame, text="Uncommitted changes",
+                       variable=self.dirty_uncommitted_var,
+                       command=self.on_dirty_criteria_change).pack(side=tk.LEFT, padx=(5, 0))
+        ttk.Checkbutton(criteria_frame, text="No remote",
+                       variable=self.dirty_no_remote_var,
+                       command=self.on_dirty_criteria_change).pack(side=tk.LEFT, padx=(5, 0))
+        ttk.Checkbutton(criteria_frame, text="Unpushed commits",
+                       variable=self.dirty_unpushed_var,
+                       command=self.on_dirty_criteria_change).pack(side=tk.LEFT, padx=(5, 0))
+
         # Separator
         ttk.Separator(filter_frame, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=(10, 10))
         
@@ -531,7 +588,30 @@ class DirtyGitFinderGUI:
         
         # Check current autostart status
         self.check_autostart_status()
-        
+
+    def on_dirty_criteria_change(self):
+        """Called when dirty criteria checkboxes are changed."""
+        # Re-apply filter to update display based on new criteria
+        self.apply_filter()
+
+    def is_repo_dirty(self, repo_info):
+        """Determine if a repository is dirty based on user-selected criteria."""
+        is_dirty = False
+
+        # Check uncommitted changes
+        if self.dirty_uncommitted_var.get() and repo_info.get('has_uncommitted', False):
+            is_dirty = True
+
+        # Check no remote
+        if self.dirty_no_remote_var.get() and not repo_info.get('has_remote', True):
+            is_dirty = True
+
+        # Check unpushed commits
+        if self.dirty_unpushed_var.get() and repo_info.get('has_unpushed', False):
+            is_dirty = True
+
+        return is_dirty
+
     def browse_path(self):
         """Browse for a directory to scan."""
         from tkinter import filedialog
@@ -585,8 +665,11 @@ class DirtyGitFinderGUI:
     
     def _add_repo_to_tree(self, repo_info):
         """Add a repository to the results tree."""
-        status = "🔥 DIRTY" if repo_info['dirty'] else "✅ CLEAN"
-        status_color = "red" if repo_info['dirty'] else "green"
+        # Determine dirty status based on user-selected criteria
+        is_dirty = self.is_repo_dirty(repo_info)
+
+        status = "🔥 DIRTY" if is_dirty else "✅ CLEAN"
+        status_color = "red" if is_dirty else "green"
         oldest_mod_info = repo_info.get('oldest_modification', '')
         last_commit_info = repo_info.get('last_commit', '')
 
@@ -606,9 +689,12 @@ class DirtyGitFinderGUI:
         changes_list = repo_info.get('changes', [])
         changes_parts = []
 
-        # Add "NO REMOTE" warning if no remote is configured
+        # Add warnings for various dirty criteria
         if not repo_info.get('has_remote', True):
             changes_parts.append('⚠️ NO REMOTE')
+
+        if repo_info.get('has_unpushed', False):
+            changes_parts.append('⚠️ UNPUSHED')
 
         # Add changes
         if changes_list:
@@ -620,7 +706,7 @@ class DirtyGitFinderGUI:
         time_diff = self.scanner.calculate_time_diff(oldest_mod_info, last_commit_info)
 
         # Insert dirty repos at the beginning, clean repos at the end
-        position = 0 if repo_info['dirty'] else 'end'
+        position = 0 if is_dirty else 'end'
 
         # Determine tags for branch highlighting
         branch = repo_info['branch']
@@ -640,16 +726,16 @@ class DirtyGitFinderGUI:
         ), tags=tags)
 
         # Color code dirty repositories
-        if repo_info['dirty']:
+        if is_dirty:
             self.tree.set(item, 'Status', status)
     
     def _scan_completed(self):
         """Handle scan completion."""
         self.scan_button.config(state='normal')
         self.cancel_button.config(state='disabled')
-        
+
         total_repos = len(self.found_repos)
-        dirty_repos = sum(1 for repo in self.found_repos if repo['dirty'])
+        dirty_repos = sum(1 for repo in self.found_repos if self.is_repo_dirty(repo))
         
         self.progress_var.set(f"Scan completed - Found {total_repos} repositories")
         self.status_var.set(f"Total: {total_repos} repositories, Dirty: {dirty_repos}, Clean: {total_repos - dirty_repos}")
@@ -991,7 +1077,7 @@ class DirtyGitFinderGUI:
     
     def get_repo_oldest_timestamp(self, repo_info):
         """Extract timestamp from repository info for sorting."""
-        if not repo_info.get('dirty', False):
+        if not self.is_repo_dirty(repo_info):
             return 9999999999  # Clean repos get high timestamp (sorted last)
         
         # First try to get timestamp from stored data
@@ -1425,27 +1511,30 @@ X-GNOME-Autostart-enabled=true
         # Sort repos: dirty first, then by oldest modification time, then by name
         def sort_key(repo):
             # First: dirty repos come first
-            if not repo['dirty']:
+            if not self.is_repo_dirty(repo):
                 return (1, 9999999999, repo['name'].lower())  # Clean repos at the end
-            
+
             # For dirty repos: get timestamp for sorting (oldest first)
             oldest_timestamp = self.get_repo_oldest_timestamp(repo)
             return (0, oldest_timestamp, repo['name'].lower())
-        
+
         sorted_repos = sorted(self.found_repos, key=sort_key)
-        
+
         # Add filtered results
         for repo in sorted_repos:
             if filter_value == "all":
                 self._add_repo_to_tree_sorted(repo)
-            elif filter_value == "dirty" and repo['dirty']:
+            elif filter_value == "dirty" and self.is_repo_dirty(repo):
                 self._add_repo_to_tree_sorted(repo)
-            elif filter_value == "clean" and not repo['dirty']:
+            elif filter_value == "clean" and not self.is_repo_dirty(repo):
                 self._add_repo_to_tree_sorted(repo)
     
     def _add_repo_to_tree_sorted(self, repo_info):
         """Add a repository to the results tree in sorted order."""
-        status = "🔥 DIRTY" if repo_info['dirty'] else "✅ CLEAN"
+        # Determine dirty status based on user-selected criteria
+        is_dirty = self.is_repo_dirty(repo_info)
+
+        status = "🔥 DIRTY" if is_dirty else "✅ CLEAN"
         oldest_mod_info = repo_info.get('oldest_modification', '')
         last_commit_info = repo_info.get('last_commit', '')
 
@@ -1465,9 +1554,12 @@ X-GNOME-Autostart-enabled=true
         changes_list = repo_info.get('changes', [])
         changes_parts = []
 
-        # Add "NO REMOTE" warning if no remote is configured
+        # Add warnings for various dirty criteria
         if not repo_info.get('has_remote', True):
             changes_parts.append('⚠️ NO REMOTE')
+
+        if repo_info.get('has_unpushed', False):
+            changes_parts.append('⚠️ UNPUSHED')
 
         # Add changes
         if changes_list:
@@ -1496,7 +1588,7 @@ X-GNOME-Autostart-enabled=true
         ), tags=tags)
 
         # Color code dirty repositories
-        if repo_info['dirty']:
+        if is_dirty:
             self.tree.set(item, 'Status', status)
 
 
