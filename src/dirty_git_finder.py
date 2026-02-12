@@ -296,9 +296,10 @@ class DirtyGitFinderGUI:
         """Set the application icon."""
         try:
             from PIL import Image, ImageTk
-            # Get the directory where this script is located
+            # Get the project root directory (one level up from src/)
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            icon_path = os.path.join(script_dir, 'app_icon.png')
+            project_root = os.path.dirname(script_dir)
+            icon_path = os.path.join(project_root, 'assets', 'app_icon.png')
 
             if os.path.exists(icon_path):
                 # Load the icon image
@@ -324,7 +325,8 @@ class DirtyGitFinderGUI:
         try:
             import subprocess
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            create_icon_script = os.path.join(script_dir, 'create_icon.py')
+            project_root = os.path.dirname(script_dir)
+            create_icon_script = os.path.join(project_root, 'create_icon.py')
             if os.path.exists(create_icon_script):
                 subprocess.run(['python3', create_icon_script], check=True)
                 # Try setting icon again
@@ -787,8 +789,9 @@ class DirtyGitFinderGUI:
 
     def open_this_project(self):
         """Open this project (the GUI tool itself) in VS Code."""
-        # Get the directory where this script is located
-        this_project_path = os.path.dirname(os.path.abspath(__file__))
+        # Get the project root directory (one level up from src/)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        this_project_path = os.path.dirname(script_dir)
 
         try:
             # Try to open in VS Code
@@ -828,9 +831,10 @@ class DirtyGitFinderGUI:
         def submit():
             text = entry_var.get().strip()
             if text:
-                # Get path to feature_bugs.txt in project directory
-                project_dir = os.path.dirname(os.path.abspath(__file__))
-                bugs_file = os.path.join(project_dir, "feature_bugs.txt")
+                # Get path to feature_bugs.txt in project root (one level up from src/)
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                project_root = os.path.dirname(script_dir)
+                bugs_file = os.path.join(project_root, "feature_bugs.txt")
 
                 # Append to file
                 with open(bugs_file, 'a') as f:

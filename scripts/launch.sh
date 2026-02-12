@@ -5,11 +5,14 @@
 # Get the directory where the actual script is located (follow symlinks)
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 
-# Change to the script directory
-cd "$SCRIPT_DIR"
+# Get the project root (one level up from scripts/)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to the project root directory
+cd "$PROJECT_ROOT"
 
 # Launch the application (detached from terminal)
-nohup python3 "$SCRIPT_DIR/run.py" > /dev/null 2>&1 &
+nohup python3 "$PROJECT_ROOT/run.py" > /dev/null 2>&1 &
 
 # Optional: Log startup for debugging
 # mkdir -p "$HOME/.local/share/dirty-git-finder"

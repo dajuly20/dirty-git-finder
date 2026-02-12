@@ -9,6 +9,9 @@ echo "Installing Dirty Git Finder Autostart..."
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Get the project root (one level up from scripts/)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
 # Create autostart directory if it doesn't exist
 AUTOSTART_DIR="$HOME/.config/autostart"
 mkdir -p "$AUTOSTART_DIR"
@@ -19,8 +22,8 @@ mkdir -p "$BIN_DIR"
 
 # Make the launcher script executable
 chmod +x "$SCRIPT_DIR/launch.sh"
-chmod +x "$SCRIPT_DIR/run.py"
-chmod +x "$SCRIPT_DIR/dirty_git_finder.py"
+chmod +x "$PROJECT_ROOT/run.py"
+chmod +x "$PROJECT_ROOT/src/dirty_git_finder.py"
 
 echo "Made scripts executable"
 
@@ -51,7 +54,7 @@ Name=Dirty Git Finder
 GenericName=Git Repository Monitor
 Comment=Scans for Git repositories and shows which ones have uncommitted changes
 Exec=$BIN_DIR/$SYMLINK_NAME
-Path=$SCRIPT_DIR
+Path=$PROJECT_ROOT
 Icon=git
 Terminal=false
 Categories=Development;Utility;
@@ -83,4 +86,4 @@ echo "To start manually, run:"
 echo "  dirty-git-finder"
 echo ""
 echo "To uninstall, run:"
-echo "  $SCRIPT_DIR/uninstall-autostart.sh"
+echo "  $PROJECT_ROOT/scripts/uninstall-autostart.sh"
