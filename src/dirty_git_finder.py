@@ -42,6 +42,21 @@ class GitRepoScanner:
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
             return False
     
+    def has_remote(self, repo_path):
+        """Check if a Git repository has a remote configured."""
+        try:
+            result = subprocess.run(
+                ['git', 'remote'],
+                cwd=repo_path,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            # If there's any remote, output will be non-empty
+            return bool(result.stdout.strip())
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
+            return False
+
     def get_repo_status(self, repo_path):
         """Get detailed status information for a Git repository."""
         try:
@@ -54,7 +69,7 @@ class GitRepoScanner:
                 timeout=5
             )
             branch = branch_result.stdout.strip() or "detached HEAD"
-            
+
             # Get status summary
             status_result = subprocess.run(
                 ['git', 'status', '--porcelain'],
@@ -63,25 +78,34 @@ class GitRepoScanner:
                 text=True,
                 timeout=5
             )
-            
+
             status_lines = status_result.stdout.strip().split('\n') if status_result.stdout.strip() else []
-            
+
+            # Check if repository has a remote
+            has_remote = self.has_remote(repo_path)
+
             # Get oldest modification time of dirty files
             oldest_mod_time = self.get_oldest_dirty_file_time(repo_path, status_lines)
-            
+
             # Get last commit info
             last_commit_info = self.get_last_commit_info(repo_path)
-            
+
+            # Repository is dirty if:
+            # 1. It has uncommitted changes (status_lines not empty)
+            # 2. It has no remote configured
+            is_dirty = bool(status_lines) or not has_remote
+
             return {
                 'branch': branch,
-                'dirty': bool(status_lines),
+                'dirty': is_dirty,
+                'has_remote': has_remote,
                 'changes_count': len(status_lines),
                 'changes': status_lines[:5],  # Show first 5 changes
                 'oldest_modification': oldest_mod_time,
                 'last_commit': last_commit_info
             }
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
-            return {'branch': 'unknown', 'dirty': False, 'changes_count': 0, 'changes': [], 'oldest_modification': None, 'last_commit': None}
+            return {'branch': 'unknown', 'dirty': False, 'has_remote': False, 'changes_count': 0, 'changes': [], 'oldest_modification': None, 'last_commit': None}
     
     def get_oldest_dirty_file_time(self, repo_path, status_lines):
         """Get the oldest modification time of dirty files with filename."""
@@ -580,7 +604,17 @@ class DirtyGitFinderGUI:
 
         # Format changes as git status -s output
         changes_list = repo_info.get('changes', [])
-        changes_display = ', '.join(changes_list[:5]) if changes_list else ''
+        changes_parts = []
+
+        # Add "NO REMOTE" warning if no remote is configured
+        if not repo_info.get('has_remote', True):
+            changes_parts.append('⚠️ NO REMOTE')
+
+        # Add changes
+        if changes_list:
+            changes_parts.append(', '.join(changes_list[:5]))
+
+        changes_display = ' | '.join(changes_parts) if changes_parts else ''
 
         # Calculate time difference
         time_diff = self.scanner.calculate_time_diff(oldest_mod_info, last_commit_info)
@@ -1429,7 +1463,17 @@ X-GNOME-Autostart-enabled=true
 
         # Format changes as git status -s output
         changes_list = repo_info.get('changes', [])
-        changes_display = ', '.join(changes_list[:5]) if changes_list else ''
+        changes_parts = []
+
+        # Add "NO REMOTE" warning if no remote is configured
+        if not repo_info.get('has_remote', True):
+            changes_parts.append('⚠️ NO REMOTE')
+
+        # Add changes
+        if changes_list:
+            changes_parts.append(', '.join(changes_list[:5]))
+
+        changes_display = ' | '.join(changes_parts) if changes_parts else ''
 
         # Calculate time difference
         time_diff = self.scanner.calculate_time_diff(oldest_mod_info, last_commit_info)

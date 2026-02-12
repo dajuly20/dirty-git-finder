@@ -32,6 +32,7 @@ Eine professionelle Python GUI-Anwendung, die Ihr System nach Git-Repositories d
 
 ### 🎯 **Erweiterte Git-Status-Analyse**
 - **Detaillierte Dirty-Detection**: Erkennt modified, added, deleted, untracked files
+- **Remote-Check**: Repositories ohne Remote (GitHub/GitLab) werden als DIRTY markiert
 - **Commit-Timeline**: Zeigt letzten Commit-Zeitpunkt und Alter der Änderungen
 - **Branch-Tracking**: Aktueller Branch und HEAD-Status
 - **Zeitdifferenz-Analyse**: Wie lange sind Änderungen bereits uncommitted?
@@ -376,7 +377,10 @@ rm ~/.config/autostart/dirty-git-finder.desktop
 │ Status-Analyse:                             │
 │ - Changes parsen (M, A, D, ??, etc.)        │
 │ - Anzahl der Änderungen zählen              │
-│ - Dirty vs. Clean bestimmen                 │
+│ - Remote-Check (git remote)                 │
+│ - Dirty bestimmen:                          │
+│   * Uncommitted changes ODER                │
+│   * Kein Remote konfiguriert                │
 └─────────────────────────────────────────────┘
             ↓
 ┌─────────────────────────────────────────────┐
@@ -418,6 +422,7 @@ C  = Copied (Datei kopiert)
 │   'name': 'project',                        │
 │   'branch': 'main',                         │
 │   'dirty': True/False,                      │
+│   'has_remote': True/False,                 │
 │   'changes_count': 3,                       │
 │   'changes': ['M file.py', '?? new.txt'],   │
 │   'oldest_modification': {                  │
@@ -939,15 +944,15 @@ scan-for-dirty-git-repos-gui/
 2. **Path**: Vollständiger Pfad
 3. **Branch**: Aktueller Git-Branch
 4. **Status**: 🔥 DIRTY oder ✅ CLEAN
-5. **Changes**: Git-Status-Zeilen (M, A, D, ??)
+5. **Changes**: Git-Status-Zeilen (M, A, D, ??) + ⚠️ NO REMOTE wenn kein Remote konfiguriert
 6. **Älteste Änderung**: Dateiname + Zeitstempel
 7. **Letzter Commit**: Wann war der letzte Commit
 8. **Zeitdifferenz**: Alter der uncommitted changes
 
 #### **Filter-Optionen**
 - **All**: Zeigt alle gefundenen Repositories
-- **Dirty Only**: Nur Repositories mit uncommitted changes (Standard)
-- **Clean Only**: Nur saubere Repositories
+- **Dirty Only**: Nur Repositories mit uncommitted changes ODER ohne Remote (Standard)
+- **Clean Only**: Nur saubere Repositories mit Remote
 
 ### **Maus-Interaktionen**
 
