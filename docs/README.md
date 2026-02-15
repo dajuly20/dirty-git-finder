@@ -1011,6 +1011,27 @@ Ein Repository wird als DIRTY markiert, wenn **mindestens eines** der aktivierte
 - **Pfeiltasten**: Navigation in Repository-Liste
 - **Enter**: Gewähltes Repository im Dateimanager öffnen
 
+### **Dirty-Kriterien anpassen**
+
+Du kannst selbst bestimmen, welche Bedingungen ein Repository als "dirty" markieren:
+
+1. **Standardeinstellung (Entwickler-Workflow):**
+   - ☑ Uncommitted changes (lokale Änderungen)
+   - ☑ No remote (kein Backup auf GitHub/GitLab)
+   - ☐ Unpushed commits (aus)
+
+2. **Release-Manager-Workflow:**
+   - ☐ Uncommitted changes (aus)
+   - ☐ No remote (aus)
+   - ☑ Unpushed commits (zeigt nur Repos mit unpushed commits)
+
+3. **Backup-Check:**
+   - ☐ Uncommitted changes (aus)
+   - ☑ No remote (zeigt nur Repos ohne Remote-Backup)
+   - ☐ Unpushed commits (aus)
+
+**Hinweis:** Die Anzeige wird sofort aktualisiert, wenn du eine Checkbox änderst.
+
 ---
 
 ## 🔧 Troubleshooting

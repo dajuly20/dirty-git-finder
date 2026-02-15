@@ -1364,7 +1364,31 @@ class DirtyGitFinderGUI:
             if system == "Linux":
                 autostart_dir = os.path.expanduser("~/.config/autostart")
                 desktop_file = os.path.join(autostart_dir, "dirty-git-finder.desktop")
-                self.autostart_var.set(os.path.exists(desktop_file))
+                enabled = False
+                if os.path.exists(desktop_file):
+                    try:
+                        with open(desktop_file, 'r') as f:
+                            content = f.read()
+                        # Check that the Exec target actually exists
+                        for line in content.splitlines():
+                            if line.startswith("Exec="):
+                                exec_cmd = line[5:].strip().split()[0]
+                                # Remove quotes
+                                exec_cmd = exec_cmd.strip('"').strip("'")
+                                if exec_cmd == "python3":
+                                    # python3 <script> - check the script path
+                                    parts = line[5:].strip().split(None, 1)
+                                    if len(parts) > 1:
+                                        target = parts[1].strip('"').strip("'")
+                                        enabled = os.path.isfile(target)
+                                else:
+                                    enabled = os.path.isfile(exec_cmd)
+                                break
+                        else:
+                            enabled = True  # No Exec line found, trust the file
+                    except Exception:
+                        enabled = True  # Can't read, assume enabled
+                self.autostart_var.set(enabled)
             elif system == "Darwin":  # macOS
                 # Check for LaunchAgent
                 plist_path = os.path.expanduser("~/Library/LaunchAgents/com.dirtygitfinder.plist")
@@ -1389,8 +1413,9 @@ class DirtyGitFinderGUI:
             import platform
             system = platform.system()
             script_path = os.path.abspath(__file__)
-            
-            if self.autostart_var.get():
+            wanted = self.autostart_var.get()
+
+            if wanted:
                 # Enable autostart
                 if system == "Linux":
                     self.create_linux_autostart(script_path)
@@ -1398,8 +1423,6 @@ class DirtyGitFinderGUI:
                     self.create_macos_autostart(script_path)
                 elif system == "Windows":
                     self.create_windows_autostart(script_path)
-                
-                messagebox.showinfo("Autostart", "Programm wurde für Autostart beim Systemstart aktiviert.")
             else:
                 # Disable autostart
                 if system == "Linux":
@@ -1408,24 +1431,49 @@ class DirtyGitFinderGUI:
                     self.remove_macos_autostart()
                 elif system == "Windows":
                     self.remove_windows_autostart()
-                
-                messagebox.showinfo("Autostart", "Autostart wurde deaktiviert.")
-                
+
+            # Verify the action actually took effect
+            self.check_autostart_status()
+            actual = self.autostart_var.get()
+
+            if actual == wanted:
+                if wanted:
+                    messagebox.showinfo("Autostart", "Programm wurde für Autostart beim Systemstart aktiviert.")
+                else:
+                    messagebox.showinfo("Autostart", "Autostart wurde deaktiviert.")
+            else:
+                messagebox.showwarning(
+                    "Autostart",
+                    "Autostart konnte nicht korrekt konfiguriert werden.\n"
+                    "Bitte prüfe die Berechtigungen für ~/.config/autostart/"
+                )
+
         except Exception as e:
             messagebox.showerror("Fehler", f"Autostart konnte nicht konfiguriert werden: {e}")
-            # Reset checkbox on error
+            # Reset checkbox to actual state
             self.check_autostart_status()
     
     def create_linux_autostart(self, script_path):
         """Create Linux autostart entry."""
         autostart_dir = os.path.expanduser("~/.config/autostart")
         os.makedirs(autostart_dir, exist_ok=True)
-        
+
+        # Use launch.sh or fall back to run.py with correct working directory
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        launch_script = os.path.join(project_root, "scripts", "launch.sh")
+
+        if os.path.isfile(launch_script):
+            exec_line = launch_script
+        else:
+            run_py = os.path.join(project_root, "run.py")
+            exec_line = f'python3 "{run_py}"'
+
         desktop_content = f"""[Desktop Entry]
 Type=Application
 Name=Dirty Git Finder
 Comment=Git Repository Status Monitor
-Exec=python3 "{script_path}"
+Exec={exec_line}
+Path={project_root}
 Icon=git
 Terminal=false
 Categories=Development;
