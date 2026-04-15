@@ -208,7 +208,7 @@ rm ~/.config/autostart/dirty-git-finder.desktop
 
 ---
 
-## � Makefile & Build-System
+## Makefile & Build-System
 
 Das Projekt verwendet ein **Makefile** zur Automatisierung häufiger Entwicklungs- und Build-Aufgaben. Dies stellt sicher, dass alle Befehle konsistent und korrekt ausgeführt werden.
 
