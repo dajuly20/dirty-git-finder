@@ -267,6 +267,42 @@ make sdist
 # └── dirty_git_finder-2.2.0.tar.gz
 ```
 
+##### **📦 Was ist ein Wheel (.whl)?**
+
+Ein **Wheel** ist ein vorkompiliertes, installationsfertiges Python-Paketformat:
+
+| Aspekt | Wheel (.whl) | Source (.tar.gz) |
+|--------|---------|----------|
+| **Format** | Binary, vorkompiliert | Quellcode |
+| **Installation** | ⚡ Schnell (1-2 Sek.) | 🐢 Langsam (Compilation) |
+| **Größe** | Größer | Kleiner |
+| **Abhängigkeiten** | Enthalten | Müssen installiert werden |
+| **Verwendung** | End-User (pip install) | Entwickler, PyPI |
+
+**Beispiel: Wheel-Dateiname erklärt**
+```
+dirty_git_finder-2.2.0-py3-none-any.whl
+                 │      │   │    │
+                 │      │   │    └─ Kompatibilität: any (alle Systeme)
+                 │      │   └────── ABI: none (kein C-Code)
+                 │      └────────── Python: py3 (Python 3.x)
+                 └────────────────── Version: 2.2.0
+```
+
+**Praktisches Beispiel:**
+```bash
+# Wheel bauen (schnell!)
+make wheel
+
+# Installation aus Wheel (sehr schnell!)
+pip install dist/dirty_git_finder-2.2.0-py3-none-any.whl
+
+# Vs. Source Distribution (muss während Installation kompilieren)
+pip install dist/dirty_git_finder-2.2.0.tar.gz  # ⏳ langsamer
+```
+
+**Fazit:** Wheels sind **vorkompilierte Fertig-Pakete** — schnell, zuverlässig, ohne Compilation! 🚀
+
 #### **🧹 Aufräumen**
 ```bash
 # Entfernt alle Build-Artefakte
