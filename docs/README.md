@@ -13,12 +13,13 @@ Eine professionelle Python GUI-Anwendung, die Ihr System nach Git-Repositories d
 1. [Features](#-features)
 2. [Systemvoraussetzungen](#-systemvoraussetzungen)
 3. [Installation & Setup](#-installation--setup)
-4. [Programmablauf - Detailliert](#-programmablauf---detailliert)
-5. [Architektur & Datenfluss](#-architektur--datenfluss)
-6. [Projektstruktur](#-projektstruktur)
-7. [Bedienungsanleitung](#-bedienungsanleitung)
-8. [Troubleshooting](#-troubleshooting)
-9. [Entwicklung & Anpassungen](#-entwicklung--anpassungen)
+4. [Makefile & Build-System](#makefile--build-system)
+5. [Programmablauf - Detailliert](#-programmablauf---detailliert)
+6. [Architektur & Datenfluss](#-architektur--datenfluss)
+7. [Projektstruktur](#-projektstruktur)
+8. [Bedienungsanleitung](#-bedienungsanleitung)
+9. [Troubleshooting](#-troubleshooting)
+10. [Entwicklung & Anpassungen](#-entwicklung--anpassungen)
 
 ---
 
@@ -207,7 +208,244 @@ rm ~/.config/autostart/dirty-git-finder.desktop
 
 ---
 
-## 🔄 Programmablauf - Detailliert
+## � Makefile & Build-System
+
+Das Projekt verwendet ein **Makefile** zur Automatisierung häufiger Entwicklungs- und Build-Aufgaben. Dies stellt sicher, dass alle Befehle konsistent und korrekt ausgeführt werden.
+
+### **Makefile-Struktur & Überblick**
+
+Das Makefile befindet sich im Projektroot und enthält etwa 15+ Ziele (Targets) für verschiedene Aufgaben. Es nutzt Python 3.12 mit einer **Virtual Environment (.venv)** zur Isolation aller Dependencies.
+
+**Wichtiger Hinweis:** Das Makefile ist so konfiguriert, dass es die Python-Interpreter und Tools aus der `.venv/` verwendet, nicht aus dem System. Dies garantiert:
+- ✅ Konsistente Abhängigkeitsversionen
+- ✅ Keine Konflikte mit System-Python
+- ✅ Reproducible Builds auf verschiedenen Systemen
+
+### **Vollständige Befehlsreferenz**
+
+#### **🏠 Hilfe & Überblick**
+```bash
+make help          # Zeigt alle verfügbaren Befehle mit Beschreibungen
+```
+
+#### **📦 Installation (verschiedene Modi)**
+```bash
+# System-weit installieren (erfordert sudo/Admin-Rechte)
+make install
+
+# Für aktuellen Benutzer (~/.local/bin wird verwendet)
+make install-user
+
+# Entwicklermodus (editable install - Änderungen sofort wirksam)
+make install-dev
+
+# Deinstallieren
+make uninstall
+```
+
+#### **▶️ Anwendung ausführen**
+```bash
+# Startet die GUI-Anwendung direkt
+make run
+
+# Entspricht: .venv/bin/python run.py
+```
+
+#### **🏗️ Paket bauen**
+```bash
+# Erstellt BEIDE: Wheel (.whl) + Source Distribution (.tar.gz)
+make build
+
+# Nur Wheel (schneller, für lokale Installation)
+make wheel
+
+# Nur Source Distribution (für PyPI)
+make sdist
+
+# Beispiel: dist/ enthält dann:
+# ├── dirty_git_finder-2.2.0-py3-none-any.whl
+# └── dirty_git_finder-2.2.0.tar.gz
+```
+
+#### **🧹 Aufräumen**
+```bash
+# Entfernt alle Build-Artefakte
+make clean
+
+# Detailed: Löscht:
+# ├── build/              # Build-Verzeichnis
+# ├── dist/               # Distribution (Wheels, Tarballs)
+# ├── *.egg-info/         # Egg-Info Verzeichnisse
+# └── __pycache__/        # Python Cache-Dateien
+```
+
+#### **🔍 Code-Qualität**
+```bash
+# Führt Linting durch (pylint + flake8)
+make lint
+
+# Details:
+# - pylint: Prüft Code-Stil und potenzielle Fehler
+# - flake8: PEP8-Compliance und Best Practices
+```
+
+#### **✅ Tests**
+```bash
+# Placeholder für Tests (noch nicht implementiert)
+make test
+
+# TODO: Wird später mit pytest Tests gefüllt
+```
+
+#### **🚀 Veröffentlichung (PyPI)**
+```bash
+# Testet, ob Paket korrekt gebaut werden kann
+make check
+
+# Hochladen zu TestPyPI (zum Testen vor echtem Upload)
+make publish-test
+
+# Hochladen zu PyPI (öffentliche Veröffentlichung)
+make publish
+
+# Notwendig: PyPI-Token in ~/.pypirc oder als Environment-Variable
+```
+
+#### **🔄 Autostart-Integration**
+```bash
+# Aktiviert Autostart beim Systemstart
+make autostart
+
+# Deaktiviert Autostart
+make autostart-remove
+
+# Details:
+# - Linux: Erstellt ~/.config/autostart/dirty-git-finder.desktop
+# - macOS: Erstellt ~/Library/LaunchAgents Eintrag
+# - Windows: Registry HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
+```
+
+### **Makefile-Interna erklärt**
+
+#### **1. Python Environment Setup**
+```makefile
+# Das Makefile verwendet NICHT python3 oder python direkt,
+# sondern .venv/bin/python für Konsistenz:
+
+build: clean
+    .venv/bin/python -m build
+
+run:
+    .venv/bin/python run.py
+```
+
+**Warum?** Wenn `python3 -m build` ohne `.venv/` verwendet wird, sucht es im System-Python oder einer anderen Umgebung. Die Abhängigkeiten sind möglicherweise dort nicht installiert.
+
+#### **2. .PHONY Targets**
+```makefile
+.PHONY: help install install-dev run build clean lint test
+
+# Dies teilt make mit, dass diese keine echten Dateien sind,
+# sondern Befehle/Targets
+```
+
+#### **3. Clean Target**
+```makefile
+clean:
+    rm -rf build/
+    rm -rf dist/
+    rm -rf *.egg-info/
+    find . -type d -name __pycache__ -exec rm -rf {} +
+    find . -type f -name "*.pyc" -delete
+```
+
+Dies stellt sicher, dass alte Build-Artefakte nicht zu Problemen führen.
+
+#### **4. Build mit Dependencies**
+```makefile
+# 'build' hängt von 'clean' ab:
+build: clean
+    .venv/bin/python -m build
+
+# Bedeutet: make build führt zuerst 'make clean' aus, dann 'make build'
+```
+
+### **Häufige Workflows**
+
+#### **Entwicklung und Testen**
+```bash
+# 1. Änderungen machen im Code
+# 2. Lint durchführen
+make lint
+
+# 3. Neue Features testen
+make run
+
+# 4. Lokal installieren zum Testen
+make install-dev
+```
+
+#### **Für Release / Veröffentlichung**
+```bash
+# 1. Code überprüfen
+make lint
+
+# 2. Paket bauen
+make build
+
+# 3. Auf TestPyPI testen
+make publish-test
+
+# 4. Nach erfolgreicher Test - auf PyPI hochladen
+make publish
+```
+
+#### **Cleanup vor Commit**
+```bash
+# Build-Artefakte entfernen
+make clean
+
+# Dann commiten
+git add .
+git commit -m "Your message"
+```
+
+### **Troubleshooting für Makefile-Probleme**
+
+| Problem | Lösung |
+|---------|--------|
+| `make: command not found` | `sudo apt install make` (Linux) oder Homebrew (macOS) |
+| `No module named build` | Virtual Env nicht aktiviert; `.venv/` existiert nicht. Lösung: `pip install build` in .venv |
+| `Permission denied` | Scripts müssen executable sein: `chmod +x *.sh` |
+| `.venv/bin/python: No such file` | Virtual Env fehlt. Lösung: `python3 -m venv .venv` oder `pip install -e .` |
+| `ModuleNotFoundError` bei make lint | `pip install pylint flake8` in .venv |
+
+### **Manueller Weg (ohne Makefile)**
+
+Falls das Makefile nicht verfügbar ist (z.B. auf Windows ohne WSL):
+
+```bash
+# Virtual Environment erstellen
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+# oder: .venv\Scripts\activate  # Windows
+
+# Dependencies installieren
+pip install -e ".[dev]"
+
+# Anwendung starten
+python run.py
+
+# Paket bauen
+python -m build
+
+# Linting
+pylint src/*.py
+flake8 src/ --max-line-length=120
+```
+
+---
+## �🔄 Programmablauf - Detailliert
 
 ### **1️⃣ Anwendungsstart**
 
