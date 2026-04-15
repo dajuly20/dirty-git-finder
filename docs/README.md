@@ -1251,6 +1251,14 @@ Dieses Projekt steht unter der MIT-Lizenz.
 
 ## 📝 Changelog
 
+### v2.2.0 (2026-04-15)
+- **Autostart-Fix**: Dynamische Pfadgenerierung statt hardcodierter Pfade
+- **Interaktive Installation**: `autostart-install.sh` fragt jetzt ob Autostart aktiviert werden soll
+- **Symlink-Support**: `os.path.realpath()` für korrekte Pfadauflösung bei Symlinks
+- **Desktop-Entry-Fix**: Korrekte Dateirechte (0o644 statt 0o755)
+- **CLI-Integration**: `dirty-git-finder` Symlink in `~/.local/bin/`
+- **Verbesserte Dokumentation**: Aktualisierte Anleitungen und Copilot-Instructions
+
 ### v2.1.0 (2026-02-12)
 - **Einstellbare Dirty-Kriterien**: Checkboxen zur Auswahl was als "dirty" gilt
 - **Uncommitted changes**: Standard-Kriterium (an)
