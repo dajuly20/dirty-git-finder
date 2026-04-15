@@ -7,8 +7,8 @@ This guide explains how to set up the Dirty Git Finder to start automatically wh
 ### Install Autostart
 
 ```bash
-cd "/home/julian/Documents/Goding Project Git/scan-for-dirty-git-repos-gui"
-./install-autostart.sh
+cd /pfad/zu/scan-for-dirty-git-repos-gui
+./autostart-install.sh
 ```
 
 That's it! The application will now start automatically every time you log in.
@@ -20,19 +20,24 @@ The installation script creates:
 1. **Desktop Entry for Autostart**
    - Location: `~/.config/autostart/dirty-git-finder.desktop`
    - Makes the app start automatically at login
+   - Generated dynamically with correct paths
 
 2. **Application Menu Entry**
    - Location: `~/.local/share/applications/dirty-git-finder.desktop`
    - Adds the app to your applications menu
 
-3. **Executable Scripts**
+3. **CLI Symlink**
+   - Location: `~/.local/bin/dirty-git-finder`
+   - Allows launching from terminal with `dirty-git-finder`
+
+4. **Executable Scripts**
    - Makes `launch.sh`, `run.py`, and `dirty_git_finder.py` executable
 
-## Files Created
+## Files
 
 - `launch.sh` - Shell script that launches the application
-- `dirty-git-finder.desktop` - Desktop entry file
-- `install-autostart.sh` - Installation script (this is what you run)
+- `dirty-git-finder.desktop` - Desktop entry template file
+- `autostart-install.sh` - Installation script
 - `uninstall-autostart.sh` - Uninstallation script
 
 ## Managing Autostart
@@ -56,31 +61,38 @@ The app will still be in your applications menu, but won't start automatically.
 ### Re-enable Autostart
 
 ```bash
-cd "/home/julian/Documents/Goding Project Git/scan-for-dirty-git-repos-gui"
-cp dirty-git-finder.desktop ~/.config/autostart/
+./autostart-install.sh
 ```
 
 ### Completely Uninstall Autostart
 
 ```bash
-cd "/home/julian/Documents/Goding Project Git/scan-for-dirty-git-repos-gui"
 ./uninstall-autostart.sh
 ```
 
 This removes both the autostart entry and the application menu entry.
 
+### Toggle via GUI
+
+You can also enable/disable autostart directly in the application:
+- Open Dirty Git Finder
+- Check/uncheck "Beim Systemstart ausführen" checkbox
+
 ## Manual Launch
 
-If you want to start the application manually without autostart:
+If you want to start the application manually:
 
 ```bash
-# Method 1: Using the launch script
+# Method 1: Using the CLI symlink (if in PATH)
+dirty-git-finder
+
+# Method 2: Using the launch script
 ./launch.sh
 
-# Method 2: Using Python directly
+# Method 3: Using Python directly
 python3 run.py
 
-# Method 3: Direct execution
+# Method 4: Direct execution
 python3 dirty_git_finder.py
 ```
 
@@ -93,13 +105,15 @@ python3 dirty_git_finder.py
    cat ~/.config/autostart/dirty-git-finder.desktop
    ```
 
-2. Make sure the scripts are executable:
+2. Verify the paths in the desktop entry point to existing files
+
+3. Make sure the scripts are executable:
    ```bash
    ls -l launch.sh run.py dirty_git_finder.py
    ```
    All should have `x` permission.
 
-3. Try running the launcher manually:
+4. Try running the launcher manually:
    ```bash
    ./launch.sh
    ```

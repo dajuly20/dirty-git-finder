@@ -1,20 +1,19 @@
 #!/bin/bash
-# Installation script for Dirty Git Finder autostart
-# This script sets up the application to run automatically at login
+# Installation script for Dirty Git Finder
+# This script sets up the application and optionally enables autostart
 
 set -e
 
-echo "Installing Dirty Git Finder Autostart..."
+echo "=================================="
+echo "  Dirty Git Finder - Installation"
+echo "=================================="
+echo ""
 
-# Get the directory where this script is located
+# Get the directory where this script is located (scripts/)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Get the project root (one level up from scripts/)
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-
-# Create autostart directory if it doesn't exist
-AUTOSTART_DIR="$HOME/.config/autostart"
-mkdir -p "$AUTOSTART_DIR"
 
 # Create ~/.local/bin if it doesn't exist
 BIN_DIR="$HOME/.local/bin"
@@ -25,7 +24,7 @@ chmod +x "$SCRIPT_DIR/launch.sh"
 chmod +x "$PROJECT_ROOT/run.py"
 chmod +x "$PROJECT_ROOT/src/dirty_git_finder.py"
 
-echo "Made scripts executable"
+echo "✓ Scripts ausführbar gemacht"
 
 # Create symlink in ~/.local/bin
 SYMLINK_NAME="dirty-git-finder"
@@ -33,7 +32,7 @@ if [ -L "$BIN_DIR/$SYMLINK_NAME" ] || [ -e "$BIN_DIR/$SYMLINK_NAME" ]; then
     rm "$BIN_DIR/$SYMLINK_NAME"
 fi
 ln -s "$SCRIPT_DIR/launch.sh" "$BIN_DIR/$SYMLINK_NAME"
-echo "Created symlink: $BIN_DIR/$SYMLINK_NAME -> $SCRIPT_DIR/launch.sh"
+echo "✓ CLI-Symlink erstellt: $BIN_DIR/$SYMLINK_NAME"
 
 # Check if ~/.local/bin is in PATH
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
@@ -44,9 +43,9 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     echo ""
 fi
 
-# Generate desktop file with correct paths (don't use static file with hardcoded paths)
-DESKTOP_FILE="$AUTOSTART_DIR/dirty-git-finder.desktop"
-cat > "$DESKTOP_FILE" << EOF
+# Generate desktop entry content
+generate_desktop_entry() {
+    cat << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
@@ -61,29 +60,47 @@ Categories=Development;Utility;
 StartupNotify=false
 X-GNOME-Autostart-enabled=true
 EOF
+}
 
-chmod +x "$DESKTOP_FILE"
-echo "Installed autostart entry to: $DESKTOP_FILE"
-
-# Also copy to applications directory for the application menu (optional)
+# Install to applications directory for the application menu
 APPS_DIR="$HOME/.local/share/applications"
 mkdir -p "$APPS_DIR"
-cp "$DESKTOP_FILE" "$APPS_DIR/"
-chmod +x "$APPS_DIR/dirty-git-finder.desktop"
-
-echo "Installed application menu entry to: $APPS_DIR/dirty-git-finder.desktop"
+generate_desktop_entry > "$APPS_DIR/dirty-git-finder.desktop"
+echo "✓ Anwendungsmenü-Eintrag erstellt: $APPS_DIR/dirty-git-finder.desktop"
 
 # Create log directory (optional, for debugging)
 LOG_DIR="$HOME/.local/share/dirty-git-finder"
 mkdir -p "$LOG_DIR"
 
+# Ask about autostart
 echo ""
-echo "Installation complete!"
+echo "=================================="
+read -p "Soll Dirty Git Finder beim Systemstart automatisch starten? (j/n): " ENABLE_AUTOSTART
+
+AUTOSTART_DIR="$HOME/.config/autostart"
+
+if [[ "$ENABLE_AUTOSTART" =~ ^[jJyY]$ ]]; then
+    mkdir -p "$AUTOSTART_DIR"
+    generate_desktop_entry > "$AUTOSTART_DIR/dirty-git-finder.desktop"
+    echo "✓ Autostart aktiviert: $AUTOSTART_DIR/dirty-git-finder.desktop"
+else
+    # Remove autostart entry if it exists
+    if [ -f "$AUTOSTART_DIR/dirty-git-finder.desktop" ]; then
+        rm "$AUTOSTART_DIR/dirty-git-finder.desktop"
+        echo "✓ Autostart deaktiviert"
+    else
+        echo "✓ Autostart bleibt deaktiviert"
+    fi
+fi
+
 echo ""
-echo "The Dirty Git Finder will now start automatically when you log in."
+echo "=================================="
+echo "  Installation abgeschlossen!"
+echo "=================================="
 echo ""
-echo "To start manually, run:"
+echo "Starten mit:"
 echo "  dirty-git-finder"
 echo ""
-echo "To uninstall, run:"
-echo "  $PROJECT_ROOT/scripts/uninstall-autostart.sh"
+echo "Deinstallieren mit:"
+echo "  $SCRIPT_DIR/uninstall-autostart.sh"
+echo ""

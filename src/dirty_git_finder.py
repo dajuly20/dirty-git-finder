@@ -5,13 +5,15 @@ A Python GUI application that scans the home directory for Git repositories
 and identifies which ones have uncommitted changes (are "dirty").
 """
 
+__version__ = "1.2.0"
+__author__ = "Julian"
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import os
 import subprocess
 import threading
 from pathlib import Path
-import queue
 
 
 class GitRepoScanner:
@@ -334,7 +336,7 @@ class DirtyGitFinderGUI:
     
     def __init__(self, root):
         self.root = root
-        self.root.title("Dirty Git Repository Finder")
+        self.root.title(f"Dirty Git Repository Finder v{__version__}")
         self.root.geometry("1000x700")
 
         # Set application icon
@@ -1412,7 +1414,7 @@ class DirtyGitFinderGUI:
         try:
             import platform
             system = platform.system()
-            script_path = os.path.abspath(__file__)
+            script_path = os.path.realpath(__file__)
             wanted = self.autostart_var.get()
 
             if wanted:
@@ -1459,7 +1461,7 @@ class DirtyGitFinderGUI:
         os.makedirs(autostart_dir, exist_ok=True)
 
         # Use launch.sh or fall back to run.py with correct working directory
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        project_root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         launch_script = os.path.join(project_root, "scripts", "launch.sh")
 
         if os.path.isfile(launch_script):
@@ -1469,6 +1471,7 @@ class DirtyGitFinderGUI:
             exec_line = f'python3 "{run_py}"'
 
         desktop_content = f"""[Desktop Entry]
+Version=1.0
 Type=Application
 Name=Dirty Git Finder
 Comment=Git Repository Status Monitor
@@ -1476,7 +1479,8 @@ Exec={exec_line}
 Path={project_root}
 Icon=git
 Terminal=false
-Categories=Development;
+Categories=Development;Utility;
+StartupNotify=false
 X-GNOME-Autostart-enabled=true
 """
         
@@ -1484,8 +1488,8 @@ X-GNOME-Autostart-enabled=true
         with open(desktop_file, 'w') as f:
             f.write(desktop_content)
         
-        # Make executable
-        os.chmod(desktop_file, 0o755)
+        # Set correct permissions (readable, not executable)
+        os.chmod(desktop_file, 0o644)
     
     def create_macos_autostart(self, script_path):
         """Create macOS LaunchAgent."""

@@ -1,7 +1,12 @@
 """
 Git Repository Scanner Module
 Provides functionality to scan directories for Git repositories and check their status.
+
+This is a standalone module that can be used independently of the GUI application.
+For GUI usage, see dirty_git_finder.py which has its own integrated scanner.
 """
+
+__version__ = "1.2.0"
 
 import os
 import subprocess
