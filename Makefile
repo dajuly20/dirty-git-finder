@@ -24,7 +24,7 @@ help:
 
 # Run the application
 run:
-	python3 run.py
+	.venv/bin/python run.py
 
 # Install system-wide
 install:
@@ -47,15 +47,15 @@ uninstall:
 
 # Build the package
 build: clean
-	python3 -m build
+	.venv/bin/python -m build
 
 # Publish to PyPI
 publish: build
-	python3 -m twine upload dist/*
+	.venv/bin/python -m twine upload dist/*
 
 # Publish to TestPyPI
 publish-test: build
-	python3 -m twine upload --repository testpypi dist/*
+	.venv/bin/python -m twine upload --repository testpypi dist/*
 
 # Clean build artifacts
 clean:
@@ -89,11 +89,11 @@ test:
 
 # Create source distribution only
 sdist:
-	python3 -m build --sdist
+	.venv/bin/python -m build --sdist
 
 # Create wheel only
 wheel:
-	python3 -m build --wheel
+	.venv/bin/python -m build --wheel
 
 # Show version
 version:
