@@ -122,37 +122,60 @@ xcode-select --install
 
 ## 🚀 Installation & Setup
 
-### **Methode 1: Git Clone (Empfohlen)**
+### **Methode 1: pip/pipx (Empfohlen)**
+
+```bash
+# Mit pip installieren
+pip install dirty-git-finder
+
+# Oder mit pipx (isolierte Umgebung)
+pipx install dirty-git-finder
+
+# Starten
+dirty-git-finder
+```
+
+### **Methode 2: Git Clone + Make**
 
 ```bash
 # Repository klonen
 git clone https://github.com/dajuly20/scan-for-dirty-git-repos-gui.git
 cd scan-for-dirty-git-repos-gui
 
-# System-Check durchführen
-python3 --version  # Sollte 3.7+ anzeigen
-git --version      # Git sollte verfügbar sein
+# Für aktuellen Benutzer installieren
+make install-user
 
-# Anwendung starten
-python3 dirty_git_finder.py
+# Oder system-weit (benötigt sudo)
+make install
+
+# Starten
+dirty-git-finder
 ```
 
-### **Methode 2: Direkter Download**
+### **Methode 3: Entwicklermodus**
+
+```bash
+git clone https://github.com/dajuly20/scan-for-dirty-git-repos-gui.git
+cd scan-for-dirty-git-repos-gui
+
+# Im Entwicklermodus installieren (editierbar)
+make install-dev
+
+# Oder direkt starten ohne Installation
+make run
+# oder: python3 run.py
+```
+
+### **Methode 4: Direkter Download**
 
 1. **Dateien herunterladen:**
-   - Laden Sie `dirty_git_finder.py` und `git_scanner.py` herunter
-   - Speichern Sie beide Dateien in einem Ordner
+   - Laden Sie das Repository als ZIP herunter
+   - Entpacken Sie es in einen Ordner
 
-2. **Ausführbar machen (Linux/macOS):**
+2. **Starten:**
    ```bash
-   chmod +x dirty_git_finder.py
-   ```
-
-3. **Starten:**
-   ```bash
-   python3 dirty_git_finder.py
-   # oder direkt:
-   ./dirty_git_finder.py
+   cd scan-for-dirty-git-repos-gui
+   python3 run.py
    ```
 
 ### **🚀 Autostart Installation**
@@ -848,67 +871,57 @@ START
 ```
 scan-for-dirty-git-repos-gui/
 │
-├── 🐍 dirty_git_finder.py       # Haupt-GUI-Anwendung (1470 Zeilen)
-│   ├── GitRepoScanner           # Scanner-Klasse
-│   │   ├── is_git_repo()
-│   │   ├── is_repo_dirty()
-│   │   ├── get_repo_status()
-│   │   ├── get_oldest_dirty_file_time()
-│   │   ├── format_relative_time()
-│   │   ├── get_last_commit_info()
-│   │   ├── calculate_time_diff()
-│   │   ├── scan_directory()
-│   │   └── cancel_scan()
+├── 📦 pyproject.toml            # PyPI-Paketkonfiguration
+├── 🔧 Makefile                  # Build-Automatisierung
+├── 🐍 run.py                    # Launcher-Script (Entry Point)
+│
+├── 📁 src/                      # Python-Paketverzeichnis
+│   ├── 🐍 __init__.py           # Paket-Initialisierung
 │   │
-│   └── DirtyGitFinderGUI        # GUI-Hauptklasse
-│       ├── __init__()           # Initialisierung
-│       ├── set_app_icon()       # Icon setzen
-│       ├── setup_ui()           # UI-Aufbau
-│       ├── start_scan()         # Scan starten
-│       ├── _scan_worker()       # Worker-Thread
-│       ├── on_double_click()    # Event-Handler
-│       ├── on_right_click()     # Kontextmenü
-│       ├── show_git_graph()     # Git-Graph anzeigen
-│       ├── git_push_pull()      # Push/Pull
-│       ├── sort_treeview()      # Sortierung
-│       ├── apply_filter()       # Filter anwenden
-│       ├── toggle_autostart()   # Autostart-Management
-│       └── ... (40+ Methoden)
-│
-├── 🐍 git_scanner.py            # Alternative Scanner-Implementierung (244 Zeilen)
-│   ├── GitRepository            # Repository-Klasse
-│   │   ├── __init__()
-│   │   ├── is_git_repo
-│   │   ├── get_status()
-│   │   └── _analyze_changes()
+│   ├── 🐍 dirty_git_finder.py   # Haupt-GUI-Anwendung (~1500 Zeilen)
+│   │   ├── GitRepoScanner       # Scanner-Klasse
+│   │   │   ├── is_git_repo()
+│   │   │   ├── is_repo_dirty()
+│   │   │   ├── get_repo_status()
+│   │   │   ├── get_oldest_dirty_file_time()
+│   │   │   ├── format_relative_time()
+│   │   │   ├── get_last_commit_info()
+│   │   │   ├── calculate_time_diff()
+│   │   │   ├── scan_directory()
+│   │   │   └── cancel_scan()
+│   │   │
+│   │   └── DirtyGitFinderGUI    # GUI-Hauptklasse
+│   │       ├── __init__()
+│   │       ├── setup_ui()
+│   │       ├── start_scan()
+│   │       ├── show_git_graph()
+│   │       ├── git_push_pull()
+│   │       ├── toggle_autostart()
+│   │       └── ... (40+ Methoden)
 │   │
-│   └── GitScanner               # Scanner-Klasse
-│       ├── scan()
-│       ├── _scan_recursive()
-│       ├── _is_git_repository()
-│       ├── _is_git_worktree()
-│       └── cancel()
+│   └── 🐍 git_scanner.py        # Alternative Scanner-Implementierung
+│       ├── GitRepository        # Repository-Klasse
+│       └── GitScanner           # Scanner-Klasse
 │
-├── 🐍 run.py                    # Launcher-Script
-│   └── main()                   # Entry Point
+├── 📁 scripts/                  # Shell-Skripte
+│   ├── 🔧 launch.sh             # Shell-Launcher für Autostart
+│   ├── 🔧 autostart-install.sh  # Autostart-Installation (interaktiv)
+│   └── 🔧 uninstall-autostart.sh # Autostart-Deinstallation
 │
-├── 🐍 create_icon.py            # Icon-Generator
-│   └── Erstellt app_icon*.png
+├── 📁 assets/                   # Ressourcen
+│   ├── 🖼️  app_icon.png          # Anwendungs-Icons
+│   ├── 🖼️  app_icon_16.png
+│   ├── 🖼️  app_icon_32.png
+│   ├── 🖼️  app_icon_64.png
+│   ├── 🖼️  app_icon_128.png
+│   └── 🐍 create_icon.py        # Icon-Generator
 │
-├── 🖼️  app_icon.png              # Anwendungs-Icons
-├── 🖼️  app_icon_16.png
-├── 🖼️  app_icon_32.png
-├── 🖼️  app_icon_64.png
-├── 🖼️  app_icon_128.png
+├── 📁 config/                   # Konfigurationsdateien
+│   └── 🗂️  dirty-git-finder.desktop  # Linux Desktop Entry
 │
-├── 🔧 launch.sh                 # Shell-Launcher für Autostart
-├── 🔧 autostart-install.sh      # Autostart-Installation
-├── 🔧 uninstall-autostart.sh    # Autostart-Deinstallation
-│
-├── 🗂️  dirty-git-finder.desktop  # Linux Desktop Entry
-├── 📝 feature_bugs.txt          # User-Feedback-Sammlung
-├── 📖 README.md                 # Diese Datei
-├── 📖 AUTOSTART-GUIDE.md        # Autostart-Dokumentation
+├── 📁 docs/                     # Dokumentation
+│   ├── 📖 README.md             # Diese Datei
+│   └── 📖 AUTOSTART-GUIDE.md    # Autostart-Dokumentation
 │
 └── 📁 .github/
     └── copilot-instructions.md  # Entwicklungsrichtlinien
@@ -1148,6 +1161,83 @@ logging.basicConfig(
 
 ---
 
+## 📦 Paket bauen & veröffentlichen
+
+### **Voraussetzungen**
+
+```bash
+# Build-Tools installieren
+pip install build twine
+```
+
+### **Makefile-Befehle**
+
+```bash
+make help           # Zeigt alle verfügbaren Befehle
+
+# Installation
+make install        # System-weit installieren (sudo erforderlich)
+make install-user   # Für aktuellen Benutzer (~/.local/bin)
+make install-dev    # Entwicklermodus (editierbar)
+make uninstall      # Deinstallieren
+
+# Entwicklung
+make run            # Anwendung direkt starten
+make lint           # Code-Linting (pylint, flake8)
+make test           # Tests ausführen
+
+# Paket bauen
+make build          # Wheel und Source-Distribution erstellen
+make sdist          # Nur Source-Distribution
+make wheel          # Nur Wheel
+
+# Veröffentlichen
+make check          # Paket vor Upload prüfen
+make publish-test   # Auf TestPyPI hochladen
+make publish        # Auf PyPI hochladen
+
+# Aufräumen
+make clean          # Build-Artefakte löschen
+
+# Autostart
+make autostart          # Autostart aktivieren
+make autostart-remove   # Autostart deaktivieren
+```
+
+### **Manuelles Bauen**
+
+```bash
+# Build-Verzeichnis säubern
+rm -rf build/ dist/ *.egg-info/
+
+# Paket bauen
+python3 -m build
+
+# Ergebnis prüfen
+python3 -m twine check dist/*
+
+# Auf TestPyPI testen
+python3 -m twine upload --repository testpypi dist/*
+
+# Auf PyPI veröffentlichen
+python3 -m twine upload dist/*
+```
+
+### **Lokale Installation testen**
+
+```bash
+# Aus dem Build installieren
+pip install dist/dirty_git_finder-*.whl
+
+# Oder direkt vom Quellcode
+pip install .
+
+# Testen
+dirty-git-finder
+```
+
+---
+
 ## 🛠️ Entwicklung & Anpassungen
 
 ### **Ausgeschlossene Verzeichnisse erweitern**
@@ -1252,6 +1342,8 @@ Dieses Projekt steht unter der MIT-Lizenz.
 ## 📝 Changelog
 
 ### v2.2.0 (2026-04-15)
+- **PyPI-Paket**: Installation via `pip install dirty-git-finder` oder `pipx`
+- **Makefile**: Build-Automatisierung mit `make install`, `make build`, `make publish`
 - **Autostart-Fix**: Dynamische Pfadgenerierung statt hardcodierter Pfade
 - **Interaktive Installation**: `autostart-install.sh` fragt jetzt ob Autostart aktiviert werden soll
 - **Symlink-Support**: `os.path.realpath()` für korrekte Pfadauflösung bei Symlinks
