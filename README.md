@@ -8,22 +8,22 @@ Eine professionelle Python GUI-Anwendung, die Ihr System nach Git-Repositories d
 
 ---
 
-## 📋 Inhaltsverzeichnis
+## 📋 Inhaltsverzeichnis {#toc}
 
-1. [Features](#-features)
-2. [Systemvoraussetzungen](#-systemvoraussetzungen)
-3. [Installation & Setup](#-installation--setup)
-4. [Makefile & Build-System](#makefile--build-system)
-5. [Programmablauf - Detailliert](#-programmablauf---detailliert)
-6. [Architektur & Datenfluss](#-architektur--datenfluss)
-7. [Projektstruktur](#-projektstruktur)
-8. [Bedienungsanleitung](#-bedienungsanleitung)
-9. [Troubleshooting](#-troubleshooting)
-10. [Entwicklung & Anpassungen](#-entwicklung--anpassungen)
+1. [Features](#features)
+2. [Systemvoraussetzungen](#requirements)
+3. [Installation & Setup](#installation)
+4. [Makefile & Build-System](#makefile-build)
+5. [Programmablauf - Detailliert](#workflow)
+6. [Architektur & Datenfluss](#architecture)
+7. [Projektstruktur](#structure)
+8. [Bedienungsanleitung](#usage)
+9. [Troubleshooting](#troubleshooting)
+10. [Entwicklung & Anpassungen](#development)
 
 ---
 
-## ⭐ Features
+## ⭐ Features {#features}
 
 ### 🔍 **Intelligente Repository-Suche**
 - **Rekursive Scan-Engine**: Durchsucht das gesamte Dateisystem nach Git-Repositories
@@ -72,7 +72,7 @@ Eine professionelle Python GUI-Anwendung, die Ihr System nach Git-Repositories d
 
 ---
 
-## 📋 Systemvoraussetzungen
+## 📋 Systemvoraussetzungen {#requirements}
 
 ### **Betriebssystem-Unterstützung**
 - ✅ **Linux** (Ubuntu, Debian, Fedora, Arch, etc.)
@@ -121,7 +121,7 @@ xcode-select --install
 
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Installation & Setup {#installation}
 
 ### **Methode 1: pip/pipx (Empfohlen)**
 
@@ -208,7 +208,7 @@ rm ~/.config/autostart/dirty-git-finder.desktop
 
 ---
 
-## Makefile & Build-System
+## � Makefile & Build-System
 
 Das Projekt verwendet ein **Makefile** zur Automatisierung häufiger Entwicklungs- und Build-Aufgaben. Dies stellt sicher, dass alle Befehle konsistent und korrekt ausgeführt werden.
 
@@ -301,6 +301,61 @@ pip install dist/dirty_git_finder-2.2.0-py3-none-any.whl
 pip install dist/dirty_git_finder-2.2.0.tar.gz  # ⏳ langsamer
 ```
 
+##### **💾 Installation aus Wheel vs. Tarball**
+
+**Wheel Installation (EMPFOHLEN):**
+```bash
+# Paket bauen
+make wheel
+
+# Installation (schnell - nur 1-2 Sekunden!)
+pip install dist/dirty_git_finder-2.2.0-py3-none-any.whl
+
+# Oder gleich nach Build
+pip install dist/*.whl
+
+# Nach Installation testen
+dirty-git-finder
+```
+
+**Tarball Installation (Quellcode):**
+```bash
+# Paket bauen
+make sdist
+
+# Installation (langsamer - muss kompilieren!)
+pip install dist/dirty_git_finder-2.2.0.tar.gz
+
+# Nach Installation testen
+dirty-git-finder
+```
+
+**Unterschiede beim Installieren:**
+
+| Aktion | Wheel | Tarball |
+|--------|-------|---------|
+| **Zeit** | ⚡ Sofort (1-2 sec) | 🐢 Langsam (5-10 sec) |
+| **Was passiert** | Kopiert fertige Dateien | Dekomprimiert + kompiliert |
+| **Fehlerquellen** | Keine | Compilation kann fehlschlagen |
+| **Größe** | Größer (~1-2 MB) | Kleiner (~0.5 MB) |
+| **Ideal für** | End-User, CI/CD | Entwickler, Quellcode-Archiv |
+
+**Praktische Tipps:**
+```bash
+# Aktuelle Version auflisten
+pip show dirty-git-finder
+
+# Neu installieren (old version erst deinstallieren)
+pip uninstall -y dirty-git-finder
+pip install dist/dirty_git_finder-2.2.0-py3-none-any.whl
+
+# Aus mehreren Wheels das neueste nehmen
+pip install dist/*-py3-none-any.whl
+
+# Ohne System-weit zu installieren (nur für Tests)
+python -m pip install --user dist/dirty_git_finder-2.2.0-py3-none-any.whl
+```
+
 **Fazit:** Wheels sind **vorkompilierte Fertig-Pakete** — schnell, zuverlässig, ohne Compilation! 🚀
 
 #### **🧹 Aufräumen**
@@ -347,7 +402,70 @@ make publish
 # Notwendig: PyPI-Token in ~/.pypirc oder als Environment-Variable
 ```
 
-#### **🔄 Autostart-Integration**
+#### **� GitHub Releases (Binaries zum Download)**
+
+Binaries auf GitHub als **Releases** anbieten — Benutzer können direkt von GitHub downloaden!
+
+##### **Manuell: Release erstellen**
+
+```bash
+# 1. Paket bauen
+make build
+
+# 2. Auf GitHub gehen: github.com/dajuly20/scan-for-dirty-git-repos-gui/releases
+# 3. "Create a new release"
+# 4. Tag eingeben: v2.2.0
+# 5. Title: Release v2.2.0
+# 6. Dateien hochladen:
+#    - dist/dirty_git_finder-2.2.0-py3-none-any.whl
+#    - dist/dirty_git_finder-2.2.0.tar.gz
+# 7. Publish
+
+# Benutzer können dann herunterladen:
+wget https://github.com/dajuly20/scan-for-dirty-git-repos-gui/releases/download/v2.2.0/dirty_git_finder-2.2.0-py3-none-any.whl
+pip install dirty_git_finder-2.2.0-py3-none-any.whl
+```
+
+##### **Automatisiert: GitHub Actions Workflow**
+
+Mit dem beiliegenden `.github/workflows/release.yml` läuft alles automatisch:
+
+```bash
+# 1. Tag erstellen und pushen
+git tag v2.2.0
+git push origin v2.2.0
+
+# 2. GitHub Actions baut automatisch & lädt zu Releases hoch!
+# → Fertig! Binaries sind unter "Releases" verfügbar
+```
+
+**Workflow-Details:**
+- ✅ Baut automatisch Wheel + Tarball
+- ✅ Lädt beide zu GitHub Releases hoch
+- ✅ Sichtbar unter: github.com/dajuly20/.../releases
+- ✅ Benutzer können direkt herunterladen
+
+##### **Download-Links für Dokumentation**
+
+In Update-Guide oder README add:
+```markdown
+## Installation
+
+### Option 1: Neueste Version von GitHub
+[Neueste Release herunterladen](https://github.com/dajuly20/scan-for-dirty-git-repos-gui/releases/latest)
+
+Dann:
+```bash
+pip install dirty_git_finder-*.whl
+```
+
+### Option 2: pip (PyPI)
+```bash
+pip install dirty-git-finder
+```
+```
+
+#### **�🔄 Autostart-Integration**
 ```bash
 # Aktiviert Autostart beim Systemstart
 make autostart
