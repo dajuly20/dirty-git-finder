@@ -43,6 +43,8 @@ Issues = "https://github.com/dajuly20/scan-for-dirty-git-repos-gui/issues"
 
 [project.scripts]
 dirty-git-finder = "dirty_git_finder:main"
+git-dirty = "git_dirty_cli:main"
+dirty-git = "git_dirty_cli:main"
 
 [project.gui-scripts]
 dirty-git-finder-gui = "dirty_git_finder:main"
