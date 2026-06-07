@@ -206,6 +206,29 @@ def print_table(repos: List[Dict], use_color: bool,
         print(f"{name:<{name_width}}  {branch:<{branch_width}}  {status:<7}  {changes:<12}  {remote:<8}  {unpushed:<8}")
 
 
+def launch_gui() -> None:
+    """Launch the GUI application."""
+    # Determine the project root (one level up from this file's directory)
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+    project_root = os.path.dirname(this_dir)
+
+    # Prefer the venv Python so all GUI dependencies are available
+    venv_python = os.path.join(project_root, '.venv', 'bin', 'python3')
+    run_py = os.path.join(project_root, 'run.py')
+
+    python_bin = venv_python if os.path.isfile(venv_python) else sys.executable
+
+    if not os.path.isfile(run_py):
+        print(f"Error: GUI launcher not found at {run_py}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        subprocess.Popen([python_bin, run_py])
+    except Exception as e:
+        print(f"Error launching GUI: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -219,12 +242,15 @@ Examples:
   git-dirty --dirty-only       Show only dirty repos
   git-dirty --json             Output as JSON
   git-dirty -q                 Quiet mode (paths only)
+  git-dirty --gui              Open the graphical interface
 '''
     )
 
     parser.add_argument('path', nargs='?', default='.',
                         help='Path to scan (default: current directory)')
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
+    parser.add_argument('--gui', '-g', action='store_true',
+                        help='Launch the graphical user interface')
 
     # Filter options
     filter_group = parser.add_argument_group('filter options')
@@ -261,6 +287,11 @@ Examples:
                             help='Disable progress output')
 
     args = parser.parse_args()
+
+    # Launch GUI if requested
+    if args.gui:
+        launch_gui()
+        return
 
     # Resolve path
     scan_path = os.path.abspath(os.path.expanduser(args.path))
