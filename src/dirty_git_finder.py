@@ -5,7 +5,7 @@ A Python GUI application that scans the home directory for Git repositories
 and identifies which ones have uncommitted changes (are "dirty").
 """
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 __author__ = "Julian"
 
 import tkinter as tk

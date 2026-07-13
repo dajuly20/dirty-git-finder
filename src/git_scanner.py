@@ -6,7 +6,7 @@ This is a standalone module that can be used independently of the GUI applicatio
 For GUI usage, see dirty_git_finder.py which has its own integrated scanner.
 """
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 
 import os
 import subprocess
