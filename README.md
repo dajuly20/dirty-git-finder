@@ -1,3 +1,6 @@
+<img width="60%"  alt="image" src="https://github.com/user-attachments/assets/f03b10ca-8587-4edd-a660-8c6a340457f0" />
+
+
 # 🔥 Dirty Git Repository Finder GUI
 
 Eine professionelle Python GUI-Anwendung, die Ihr System nach Git-Repositories durchsucht und detailliert anzeigt, welche davon "dirty" sind (uncommitted changes haben). Perfekt für Entwickler, die einen schnellen Überblick über den Status ihrer Projekte benötigen.
